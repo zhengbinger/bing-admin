@@ -132,6 +132,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import api from '../api'
 
 const loading = ref(false)
 const permissionLoading = ref(false)
@@ -182,89 +183,33 @@ const rolesData = ref([])
 const permissionsData = ref([])
 
 // 获取角色列表
-const fetchRoles = () => {
+const fetchRoles = async () => {
   loading.value = true
-  // 模拟获取角色列表数据
-  // 实际项目中应该调用真实的API接口
-  setTimeout(() => {
-    rolesData.value = [
-      {
-        id: 1,
-        name: '超级管理员',
-        code: 'SUPER_ADMIN',
-        description: '系统最高权限管理员',
-        createTime: '2025-11-01 10:00:00',
-        updateTime: '2025-11-01 10:00:00'
-      },
-      {
-        id: 2,
-        name: '普通管理员',
-        code: 'ADMIN',
-        description: '普通管理员，具有部分管理权限',
-        createTime: '2025-11-01 10:00:00',
-        updateTime: '2025-11-05 14:30:00'
-      },
-      {
-        id: 3,
-        name: '操作员',
-        code: 'OPERATOR',
-        description: '普通操作员，仅具有基础操作权限',
-        createTime: '2025-11-01 10:00:00',
-        updateTime: '2025-11-08 09:15:00'
-      }
-    ]
+  try {
+    const response = await api.role.getRoleList()
+    rolesData.value = response.data
     pagination.total = rolesData.value.length
+  } catch (error) {
+    console.error('获取角色列表失败:', error)
+    ElMessage.error('获取角色列表失败')
+  } finally {
     loading.value = false
-  }, 500)
+  }
 }
 
 // 获取权限树
-const fetchPermissions = (roleId) => {
+const fetchPermissions = async (roleId) => {
   permissionLoading.value = true
-  // 模拟获取权限树数据
-  // 实际项目中应该调用真实的API接口
-  setTimeout(() => {
-    permissionsData.value = [
-      {
-        id: 1,
-        label: '系统管理',
-        children: [
-          { id: 11, label: '用户管理' },
-          { id: 12, label: '角色管理' },
-          { id: 13, label: '权限管理' }
-        ]
-      },
-      {
-        id: 2,
-        label: '内容管理',
-        children: [
-          { id: 21, label: '文章管理' },
-          { id: 22, label: '分类管理' }
-        ]
-      },
-      {
-        id: 3,
-        label: '统计分析',
-        children: [
-          { id: 31, label: '数据统计' },
-          { id: 32, label: '日志查询' }
-        ]
-      }
-    ]
+  try {
+    // 获取所有权限
+    const permissionsResponse = await api.permission.getPermissionTree()
+    permissionsData.value = permissionsResponse.data
     
-    // 模拟根据角色ID设置选中的权限
+    // 如果有角色ID，获取该角色已分配的权限
     if (roleId) {
-      let checkedKeys = []
-      if (roleId === 1) {
-        // 超级管理员拥有所有权限
-        checkedKeys = [1, 11, 12, 13, 2, 21, 22, 3, 31, 32]
-      } else if (roleId === 2) {
-        // 普通管理员拥有部分权限
-        checkedKeys = [2, 21, 22, 3, 31]
-      } else if (roleId === 3) {
-        // 操作员只有基础权限
-        checkedKeys = [21, 22]
-      }
+      const rolePermissionsResponse = await api.role.getPermissionsByRoleId(roleId)
+      const checkedKeys = rolePermissionsResponse.data.map(permission => permission.id)
+      
       setTimeout(() => {
         permissionTree.value.setCheckedKeys(checkedKeys)
         permissionLoading.value = false
@@ -272,7 +217,11 @@ const fetchPermissions = (roleId) => {
     } else {
       permissionLoading.value = false
     }
-  }, 500)
+  } catch (error) {
+    console.error('获取权限列表失败:', error)
+    ElMessage.error('获取权限列表失败')
+    permissionLoading.value = false
+  }
 }
 
 // 搜索
@@ -317,16 +266,21 @@ const handleEditRole = (row) => {
 }
 
 // 删除角色
-const handleDeleteRole = (id) => {
+const handleDeleteRole = async (id) => {
   ElMessageBox.confirm('确定要删除该角色吗？', '提示', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning'
-  }).then(() => {
-    // 实际项目中应该调用API删除角色
-    rolesData.value = rolesData.value.filter(role => role.id !== id)
-    pagination.total = rolesData.value.length
-    ElMessage.success('删除成功')
+  }).then(async () => {
+    try {
+      await api.role.deleteRole(id)
+      rolesData.value = rolesData.value.filter(role => role.id !== id)
+      pagination.total = rolesData.value.length
+      ElMessage.success('删除成功')
+    } catch (error) {
+      console.error('删除角色失败:', error)
+      // API请求失败，已经在拦截器中处理了错误提示
+    }
   }).catch(() => {
     // 取消删除
   })
@@ -340,44 +294,38 @@ const handleAssignPermission = (row) => {
 }
 
 // 提交分配权限
-const handleAssignPermissionSubmit = () => {
+const handleAssignPermissionSubmit = async () => {
   const checkedKeys = permissionTree.value.getCheckedKeys(true)
-  // 实际项目中应该调用API保存权限分配
-  ElMessage.success('权限分配成功')
-  permissionDialogVisible.value = false
+  try {
+    await api.permission.assignPermissionsToRole(currentRoleId.value, checkedKeys)
+    ElMessage.success('权限分配成功')
+    permissionDialogVisible.value = false
+  } catch (error) {
+    console.error('权限分配失败:', error)
+    // API请求失败，已经在拦截器中处理了错误提示
+  }
 }
 
 // 提交表单
 const handleSubmit = async () => {
   try {
     await roleFormRef.value.validate()
-    // 实际项目中应该调用API保存角色
+    
     if (dialogMode.value === 'add') {
       // 添加角色
-      const newRole = {
-        ...roleForm,
-        id: Date.now(),
-        createTime: new Date().toLocaleString(),
-        updateTime: new Date().toLocaleString()
-      }
-      rolesData.value.push(newRole)
-      pagination.total = rolesData.value.length
+      await api.role.createRole(roleForm)
       ElMessage.success('添加成功')
     } else {
       // 编辑角色
-      const index = rolesData.value.findIndex(role => role.id === roleForm.id)
-      if (index !== -1) {
-        rolesData.value[index] = {
-          ...rolesData.value[index],
-          ...roleForm,
-          updateTime: new Date().toLocaleString()
-        }
-        ElMessage.success('编辑成功')
-      }
+      await api.role.updateRole(roleForm.id, roleForm)
+      ElMessage.success('编辑成功')
     }
+    
     dialogVisible.value = false
+    fetchRoles() // 重新获取角色列表
   } catch (error) {
-    // 表单验证失败
+    console.error('保存角色失败:', error)
+    // 表单验证失败或API请求失败
   }
 }
 

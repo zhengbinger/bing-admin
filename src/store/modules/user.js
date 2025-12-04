@@ -65,13 +65,43 @@ export const useUserStore = defineStore('user', () => {
    */
   const getCurrentUser = async () => {
     try {
+      // 获取用户基本信息和权限
       const response = await userApi.getCurrentUser()
-      userInfo.value = response.data
-      localStorage.setItem('userInfo', JSON.stringify(response.data))
+      
+      // 处理后端返回的新数据结构
+      // { user: {...}, permissions: [...] }
+      if (response.data && response.data.user) {
+        userInfo.value = {
+          ...response.data.user,
+          permissions: response.data.permissions || []
+        }
+      } else {
+        // 兼容旧数据结构
+        userInfo.value = response.data
+      }
+      
+      // 保存到本地存储
+      localStorage.setItem('userInfo', JSON.stringify(userInfo.value))
       return response
     } catch (error) {
       console.error('获取用户信息失败:', error)
       throw error
+    }
+  }
+  
+  /**
+   * 获取用户权限列表
+   * @returns {Promise} 权限列表
+   */
+  const getPermissions = async () => {
+    try {
+      // 从用户信息中获取权限列表
+      // 注意：这里假设用户信息中已经包含了permissions字段
+      // 如果后端没有返回，可以调用专门的接口获取
+      return userInfo.value?.permissions || []
+    } catch (error) {
+      console.error('获取用户权限失败:', error)
+      return []
     }
   }
 

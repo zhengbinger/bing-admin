@@ -10,7 +10,7 @@
       <el-card class="stat-card card-shadow">
         <div class="stat-content">
           <div class="stat-icon primary">
-            <el-icon><i-ep-user /></el-icon>
+            <el-icon><User /></el-icon>
           </div>
           <div class="stat-info">
             <div class="stat-number">{{ userCount }}</div>
@@ -22,7 +22,7 @@
       <el-card class="stat-card card-shadow">
         <div class="stat-content">
           <div class="stat-icon success">
-            <el-icon><i-ep-setting /></el-icon>
+            <el-icon><Setting /></el-icon>
           </div>
           <div class="stat-info">
             <div class="stat-number">{{ roleCount }}</div>
@@ -34,7 +34,7 @@
       <el-card class="stat-card card-shadow">
         <div class="stat-content">
           <div class="stat-icon warning">
-            <el-icon><i-ep-lock /></el-icon>
+            <el-icon><Lock /></el-icon>
           </div>
           <div class="stat-info">
             <div class="stat-number">{{ permissionCount }}</div>
@@ -46,7 +46,7 @@
       <el-card class="stat-card card-shadow">
         <div class="stat-content">
           <div class="stat-icon danger">
-            <el-icon><i-ep-document /></el-icon>
+            <el-icon><Document /></el-icon>
           </div>
           <div class="stat-info">
             <div class="stat-number">{{ logCount }}</div>
@@ -74,6 +74,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '../store/modules/user'
+import { User, Setting, Lock, Document } from '@element-plus/icons-vue'
 
 const userStore = useUserStore()
 

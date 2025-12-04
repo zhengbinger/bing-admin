@@ -18,30 +18,30 @@
           @close="handleMenuClose"
         >
           <!-- 动态生成菜单 -->
-          <template v-for="route in sidebarRoutes" :key="route.path">
+          <template v-for="menu in sidebarRoutes" :key="menu.id">
             <!-- 有子路由的菜单 -->
-            <el-sub-menu v-if="route.children && route.children.length > 0" :index="route.path">
+            <el-sub-menu v-if="menu.children && menu.children.length > 0" :index="menu.url || menu.code">
               <template #title>
                 <el-icon>
-                  <component :is="route.meta.icon || 'Menu'" />
+                  <component :is="menu.icon || 'Menu'" />
                 </el-icon>
-                <span>{{ route.meta.title }}</span>
+                <span>{{ menu.name }}</span>
               </template>
-              <template v-for="child in route.children" :key="child.path">
-                <el-menu-item v-if="!child.meta.hidden" :index="child.path">
+              <template v-for="child in menu.children" :key="child.id">
+                <el-menu-item v-if="child.type === 0" :index="child.url || child.code">
                   <el-icon>
-                    <component :is="child.meta.icon || 'CircleChecked'" />
+                    <component :is="child.icon || 'CircleChecked'" />
                   </el-icon>
-                  <span>{{ child.meta.title }}</span>
+                  <span>{{ child.name }}</span>
                 </el-menu-item>
               </template>
             </el-sub-menu>
             <!-- 无子路由的菜单 -->
-            <el-menu-item v-else-if="!route.meta.hidden" :index="route.path">
+            <el-menu-item v-else-if="menu.type === 0" :index="menu.url || menu.code">
               <el-icon>
-                <component :is="route.meta.icon || 'CircleChecked'" />
+                <component :is="menu.icon || 'CircleChecked'" />
               </el-icon>
-              <span>{{ route.meta.title }}</span>
+              <span>{{ menu.name }}</span>
             </el-menu-item>
           </template>
         </el-menu>
@@ -58,7 +58,7 @@
             @click="toggleSidebar"
             circle
             size="small"
-            type="text"
+            link
             class="menu-toggle-btn"
           />
           <div class="breadcrumb" v-if="breadcrumbVisible">
@@ -77,7 +77,7 @@
             @click="toggleTheme"
             circle
             size="small"
-            type="text"
+            link
             class="theme-toggle-btn"
             title="切换主题"
           />
@@ -150,8 +150,8 @@ const activeMenu = computed(() => {
 
 // 侧边栏路由
 const sidebarRoutes = computed(() => {
-  // 这里可以根据权限过滤路由
-  return asyncRoutes
+  // 使用从后端获取的菜单树
+  return systemStore.menuTree
 })
 
 // 面包屑列表
@@ -197,10 +197,18 @@ watch(route, (newRoute) => {
   }
 }, { immediate: true })
 
-// 初始化主题
-onMounted(() => {
+// 初始化主题和菜单
+onMounted(async () => {
   // 应用主题
   systemStore.applyTheme()
+  // 获取用户菜单树
+  try {
+    await systemStore.getUserMenuTree()
+    // 调试菜单数据
+    console.log('菜单数据:', systemStore.menuTree)
+  } catch (error) {
+    console.error('获取菜单失败:', error)
+  }
 })
 </script>
 

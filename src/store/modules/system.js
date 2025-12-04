@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import userApi from '../../api/user'
 
 /**
  * 系统状态管理
@@ -12,6 +13,8 @@ export const useSystemStore = defineStore('system', () => {
   const language = ref(localStorage.getItem('language') || 'zh-CN')
   const breadcrumb = ref(true)
   const tagsView = ref(true)
+  const menuTree = ref([])
+  const menuLoading = ref(false)
 
   // 计算属性
   const isDarkTheme = computed(() => theme.value === 'dark')
@@ -77,12 +80,39 @@ export const useSystemStore = defineStore('system', () => {
     }
   }
 
+  /**
+   * 获取用户菜单树
+   */
+  const getUserMenuTree = async () => {
+    menuLoading.value = true
+    try {
+      const response = await userApi.getUserMenuTree()
+      menuTree.value = response.data
+      return response.data
+    } catch (error) {
+      console.error('获取菜单树失败:', error)
+      menuTree.value = []
+      throw error
+    } finally {
+      menuLoading.value = false
+    }
+  }
+
+  /**
+   * 清除菜单树
+   */
+  const clearMenuTree = () => {
+    menuTree.value = []
+  }
+
   return {
     sidebarCollapsed,
     theme,
     language,
     breadcrumb,
     tagsView,
+    menuTree,
+    menuLoading,
     isDarkTheme,
     toggleSidebar,
     setSidebarCollapsed,
@@ -90,7 +120,9 @@ export const useSystemStore = defineStore('system', () => {
     setLanguage,
     setBreadcrumbVisible,
     setTagsViewVisible,
-    applyTheme
+    applyTheme,
+    getUserMenuTree,
+    clearMenuTree
   }
 }, {
   persist: {

@@ -6,11 +6,11 @@
           <span>权限管理</span>
           <div>
             <el-button type="primary" @click="handleAddPermission">
-              <el-icon><i-ep-plus /></el-icon>
+              <el-icon><Plus /></el-icon>
               添加权限
             </el-button>
             <el-button @click="handleRefresh">
-              <el-icon><i-ep-refresh /></el-icon>
+              <el-icon><Refresh /></el-icon>
               刷新
             </el-button>
           </div>
@@ -97,6 +97,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Plus, Refresh } from '@element-plus/icons-vue'
 
 const loading = ref(false)
 const dialogVisible = ref(false)
@@ -173,7 +174,7 @@ const fetchPermissions = () => {
         sort: 1,
         path: '/system',
         component: 'Layout',
-        icon: 'i-ep-setting',
+        icon: 'Setting',
         description: '系统管理模块',
         createTime: '2025-11-01 10:00:00',
         updateTime: '2025-11-01 10:00:00',
@@ -187,7 +188,7 @@ const fetchPermissions = () => {
             sort: 1,
             path: '/user',
             component: 'User',
-            icon: 'i-ep-user',
+            icon: 'User',
             description: '用户管理功能',
             createTime: '2025-11-01 10:00:00',
             updateTime: '2025-11-01 10:00:00'
@@ -201,7 +202,7 @@ const fetchPermissions = () => {
             sort: 2,
             path: '/role',
             component: 'Role',
-            icon: 'i-ep-user-filled',
+            icon: 'UserFilled',
             description: '角色管理功能',
             createTime: '2025-11-01 10:00:00',
             updateTime: '2025-11-01 10:00:00'
@@ -215,7 +216,7 @@ const fetchPermissions = () => {
             sort: 3,
             path: '/permission',
             component: 'Permission',
-            icon: 'i-ep-lock',
+            icon: 'Lock',
             description: '权限管理功能',
             createTime: '2025-11-01 10:00:00',
             updateTime: '2025-11-01 10:00:00'
@@ -231,7 +232,7 @@ const fetchPermissions = () => {
         sort: 2,
         path: '/content',
         component: 'Layout',
-        icon: 'i-ep-document',
+        icon: 'Document',
         description: '内容管理模块',
         createTime: '2025-11-01 10:00:00',
         updateTime: '2025-11-01 10:00:00',
@@ -245,7 +246,7 @@ const fetchPermissions = () => {
             sort: 1,
             path: '/article',
             component: 'Article',
-            icon: 'i-ep-document-copy',
+            icon: 'DocumentCopy',
             description: '文章管理功能',
             createTime: '2025-11-01 10:00:00',
             updateTime: '2025-11-01 10:00:00'
@@ -259,7 +260,7 @@ const fetchPermissions = () => {
             sort: 2,
             path: '/category',
             component: 'Category',
-            icon: 'i-ep-data-line',
+            icon: 'DataLine',
             description: '分类管理功能',
             createTime: '2025-11-01 10:00:00',
             updateTime: '2025-11-01 10:00:00'

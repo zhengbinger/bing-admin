@@ -4,7 +4,7 @@ import { useUserStore } from '../store/modules/user'
 
 // 创建axios实例
 const service = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || '/api', // API基础路径
+  baseURL: import.meta.env.VITE_API_BASE_URL || '', // API基础路径
   timeout: 15000, // 请求超时时间
   headers: {
     'Content-Type': 'application/json;charset=utf-8'

@@ -1,4 +1,4 @@
-import request from '../utils/request'
+import request from '@/utils/request'
 
 /**
  * 用户API模块
@@ -51,16 +51,16 @@ const createUser = (data) => {
 // 更新用户
 const updateUser = (id, data) => {
   return request({
-    url: `/user/update/${id}`,
+    url: `/user/`,
     method: 'put',
-    data
+    data: { ...data, id }
   })
 }
 
 // 删除用户
 const deleteUser = (id) => {
   return request({
-    url: `/user/delete/${id}`,
+    url: `/user/detail/${id}`,
     method: 'delete'
   })
 }
@@ -68,9 +68,26 @@ const deleteUser = (id) => {
 // 批量删除用户
 const batchDeleteUser = (ids) => {
   return request({
-    url: '/user/batch-delete',
+    url: '/user/batch',
     method: 'delete',
-    data: { ids }
+    data: ids
+  })
+}
+
+// 获取用户菜单树
+const getUserMenuTree = () => {
+  return request({
+    url: '/user/menu_tree',
+    method: 'get'
+  })
+}
+
+// 重置用户密码
+const resetPassword = (id, data) => {
+  return request({
+    url: `/user/${id}/password`,
+    method: 'put',
+    data
   })
 }
 
@@ -78,9 +95,11 @@ export default {
   login,
   logout,
   getCurrentUser,
+  getUserMenuTree,
   getUserList,
   createUser,
   updateUser,
   deleteUser,
-  batchDeleteUser
+  batchDeleteUser,
+  resetPassword
 }

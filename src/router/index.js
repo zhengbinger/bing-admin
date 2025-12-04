@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useUserStore } from '../store/modules/user'
+import userApi from '../api/user'
 
 /**
  * 路由配置
@@ -77,16 +78,7 @@ const asyncRoutes = [
       alwaysShow: true
     },
     children: [
-      {
-        path: 'user',
-        name: 'user',
-        component: loadView('User'),
-        meta: {
-          title: '用户管理',
-          icon: 'User',
-          permissions: ['system:user:list']
-        }
-      },
+      {        path: 'user',        name: 'user',        component: loadView('User'),        meta: {          title: '用户管理',          icon: 'User',          permissions: ['user:list']        }      },
       {
         path: 'role',
         name: 'role',
@@ -120,6 +112,45 @@ const router = createRouter({
     return { top: 0 }
   }
 })
+
+// 动态添加路由
+const addDynamicRoutes = (router, routes, userPermissions) => {
+  const addRoutes = (routes) => {
+    return routes.map(route => {
+      // 检查路由是否需要权限
+      if (route.meta?.permissions && route.meta.permissions.length > 0) {
+        // 检查用户是否有该路由的权限
+        const hasPermission = route.meta.permissions.some(permission => 
+          userPermissions.includes(permission)
+        )
+        
+        if (hasPermission) {
+          // 添加子路由
+          if (route.children && route.children.length > 0) {
+            route.children = addRoutes(route.children)
+          }
+          return route
+        } else {
+          return null
+        }
+      } else {
+        // 没有权限要求的路由直接添加
+        if (route.children && route.children.length > 0) {
+          route.children = addRoutes(route.children)
+        }
+        return route
+      }
+    }).filter(Boolean)
+  }
+  
+  // 过滤出用户有权限的路由
+  const accessibleRoutes = addRoutes(routes)
+  
+  // 添加到路由
+  accessibleRoutes.forEach(route => {
+    router.addRoute(route)
+  })
+}
 
 // 路由守卫
 router.beforeEach(async (to, from, next) => {
@@ -161,6 +192,19 @@ router.beforeEach(async (to, from, next) => {
       next({ path: '/login', query: { redirect: to.fullPath } })
     }
   } else {
+    // 检查是否已经加载了动态路由
+    const hasDynamicRoutes = router.getRoutes().some(route => route.name === 'system')
+    
+    if (!hasDynamicRoutes) {
+      // 加载动态路由
+      const userPermissions = userStore.userInfo.permissions || []
+      addDynamicRoutes(router, asyncRoutes, userPermissions)
+      
+      // 重新导航到目标路由
+      next({ ...to, replace: true })
+      return
+    }
+    
     // 检查权限
     if (to.meta.permissions && to.meta.permissions.length > 0) {
       const hasPermission = userStore.userInfo.permissions?.some(permission => 

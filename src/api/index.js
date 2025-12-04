@@ -4,8 +4,12 @@
  */
 
 import userApi from './user'
+import roleApi from './role'
+import permissionApi from './permission'
 
 // 导出所有API
 export default {
-  user: userApi
+  user: userApi,
+  role: roleApi,
+  permission: permissionApi
 }
