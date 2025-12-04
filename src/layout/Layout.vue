@@ -1,9 +1,10 @@
 <template>
   <div class="layout-container">
     <!-- 侧边栏 -->
-    <aside class="sidebar" :class="{ 'sidebar-collapse': collapsed }">
+    <aside class="sidebar" :class="{ 'sidebar-collapse': sidebarCollapsed }">
       <div class="sidebar-logo">
-        <h1>Bing Admin</h1>
+        <h1 class="logo-text">Bing Admin</h1>
+        <h1 class="logo-text-short">BA</h1>
       </div>
       <nav class="sidebar-nav">
         <el-menu
@@ -13,58 +14,94 @@
           text-color="#fff"
           active-text-color="#409eff"
           router
+          @open="handleMenuOpen"
+          @close="handleMenuClose"
         >
-          <el-menu-item index="/dashboard">
-            <el-icon><i-ep-home /></el-icon>
-            <span>首页</span>
-          </el-menu-item>
-          <el-menu-item index="/user">
-            <el-icon><i-ep-user /></el-icon>
-            <span>用户管理</span>
-          </el-menu-item>
-          <el-menu-item index="/role">
-            <el-icon><i-ep-setting /></el-icon>
-            <span>角色管理</span>
-          </el-menu-item>
-          <el-menu-item index="/permission">
-            <el-icon><i-ep-lock /></el-icon>
-            <span>权限管理</span>
-          </el-menu-item>
+          <!-- 动态生成菜单 -->
+          <template v-for="route in sidebarRoutes" :key="route.path">
+            <!-- 有子路由的菜单 -->
+            <el-sub-menu v-if="route.children && route.children.length > 0" :index="route.path">
+              <template #title>
+                <el-icon>
+                  <component :is="route.meta.icon || 'Menu'" />
+                </el-icon>
+                <span>{{ route.meta.title }}</span>
+              </template>
+              <template v-for="child in route.children" :key="child.path">
+                <el-menu-item v-if="!child.meta.hidden" :index="child.path">
+                  <el-icon>
+                    <component :is="child.meta.icon || 'CircleChecked'" />
+                  </el-icon>
+                  <span>{{ child.meta.title }}</span>
+                </el-menu-item>
+              </template>
+            </el-sub-menu>
+            <!-- 无子路由的菜单 -->
+            <el-menu-item v-else-if="!route.meta.hidden" :index="route.path">
+              <el-icon>
+                <component :is="route.meta.icon || 'CircleChecked'" />
+              </el-icon>
+              <span>{{ route.meta.title }}</span>
+            </el-menu-item>
+          </template>
         </el-menu>
       </nav>
     </aside>
     
     <!-- 主内容区 -->
-    <div class="main-content" :class="{ 'sidebar-collapse': collapsed }">
+    <div class="main-content">
       <!-- 顶部导航 -->
       <header class="main-header">
         <div class="header-left">
           <el-button
-            icon="i-ep-menu-fold"
+            :icon="sidebarCollapsed ? 'Menu' : 'MenuFold'"
             @click="toggleSidebar"
             circle
             size="small"
             type="text"
+            class="menu-toggle-btn"
           />
-          <div class="breadcrumb">
+          <div class="breadcrumb" v-if="breadcrumbVisible">
             <el-breadcrumb separator="/">
               <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
-              <el-breadcrumb-item>{{ currentRoute.meta.title }}</el-breadcrumb-item>
+              <el-breadcrumb-item v-for="(item, index) in breadcrumbList" :key="index">
+                {{ item.meta.title }}
+              </el-breadcrumb-item>
             </el-breadcrumb>
           </div>
         </div>
         <div class="header-right">
+          <!-- 主题切换 -->
+          <el-button
+            :icon="isDarkTheme ? 'Sunny' : 'Moon'"
+            @click="toggleTheme"
+            circle
+            size="small"
+            type="text"
+            class="theme-toggle-btn"
+            title="切换主题"
+          />
+          <!-- 用户信息 -->
           <el-dropdown>
             <span class="user-info">
-              <el-avatar :size="32" src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png" />
+              <el-avatar :size="32" :src="userAvatar" />
               <span>{{ username }}</span>
-              <el-icon class="el-icon--right"><i-ep-arrow-down /></el-icon>
+              <el-icon class="el-icon--right"><ArrowDown /></el-icon>
             </span>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item>个人中心</el-dropdown-item>
-                <el-dropdown-item>修改密码</el-dropdown-item>
-                <el-dropdown-item divided @click="logout">退出登录</el-dropdown-item>
+                <el-dropdown-item>
+                  <el-icon><User /></el-icon>
+                  <span>个人中心</span>
+                </el-dropdown-item>
+                <el-dropdown-item>
+                  <el-icon><Lock /></el-icon>
+                  <span>修改密码</span>
+                </el-dropdown-item>
+                <el-dropdown-item divided @click="handleLogout">
+                  <el-icon><SwitchButton /></el-icon>
+                  <span>退出登录</span>
+                </el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
@@ -84,49 +121,86 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useUserStore } from '../store/modules/user'
+import { useSystemStore } from '../store/modules/system'
+import { asyncRoutes } from '../router'
 import { ElMessage } from 'element-plus'
+import { ArrowDown, User, Lock, SwitchButton } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const route = useRoute()
-const collapsed = ref(false)
-const username = ref('管理员')
+const userStore = useUserStore()
+const systemStore = useSystemStore()
+
+// 从store获取状态
+const sidebarCollapsed = computed(() => systemStore.sidebarCollapsed)
+const isDarkTheme = computed(() => systemStore.isDarkTheme)
+const breadcrumbVisible = computed(() => systemStore.breadcrumb)
+
+// 用户信息
+const username = computed(() => userStore.userInfo?.username || '管理员')
+const userAvatar = computed(() => userStore.userInfo?.avatar || 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png')
 
 // 计算当前激活的菜单
 const activeMenu = computed(() => {
   return route.path
 })
 
-// 获取当前路由信息
-const currentRoute = computed(() => {
-  return route
+// 侧边栏路由
+const sidebarRoutes = computed(() => {
+  // 这里可以根据权限过滤路由
+  return asyncRoutes
+})
+
+// 面包屑列表
+const breadcrumbList = computed(() => {
+  const matched = route.matched
+  return matched.filter(item => item.meta && item.meta.title)
 })
 
 // 切换侧边栏折叠状态
 const toggleSidebar = () => {
-  collapsed.value = !collapsed.value
+  systemStore.toggleSidebar()
+}
+
+// 切换主题
+const toggleTheme = () => {
+  systemStore.toggleTheme()
 }
 
 // 退出登录
-const logout = () => {
-  localStorage.removeItem('token')
-  localStorage.removeItem('userInfo')
-  ElMessage.success('退出登录成功')
-  router.push({ name: 'login' })
+const handleLogout = async () => {
+  try {
+    await userStore.logout()
+    router.push({ name: 'login' })
+  } catch (error) {
+    console.error('退出登录失败:', error)
+  }
 }
 
-onMounted(() => {
-  // 从localStorage中获取用户信息
-  const userInfo = localStorage.getItem('userInfo')
-  if (userInfo) {
-    try {
-      const user = JSON.parse(userInfo)
-      username.value = user.username || '管理员'
-    } catch (e) {
-      console.error('解析用户信息失败', e)
-    }
+// 处理菜单展开
+const handleMenuOpen = (key, keyPath) => {
+  console.log('菜单展开:', key, keyPath)
+}
+
+// 处理菜单收起
+const handleMenuClose = (key, keyPath) => {
+  console.log('菜单收起:', key, keyPath)
+}
+
+// 监听路由变化，设置页面标题
+watch(route, (newRoute) => {
+  if (newRoute.meta.title) {
+    document.title = `${newRoute.meta.title} - Bing Admin`
   }
+}, { immediate: true })
+
+// 初始化主题
+onMounted(() => {
+  // 应用主题
+  systemStore.applyTheme()
 })
 </script>
 
@@ -144,6 +218,11 @@ onMounted(() => {
   background-color: #001529;
   transition: width 0.3s ease;
   overflow: hidden;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 999;
 }
 
 .sidebar.sidebar-collapse {
@@ -154,22 +233,42 @@ onMounted(() => {
   padding: 20px;
   text-align: center;
   border-bottom: 1px solid #1f2937;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 60px;
 }
 
-.sidebar-logo h1 {
+.logo-text {
   color: #fff;
   font-size: 20px;
   font-weight: 600;
   margin: 0;
+  transition: opacity 0.3s ease;
 }
 
-.sidebar.sidebar-collapse .sidebar-logo h1 {
-  font-size: 14px;
+.logo-text-short {
+  color: #fff;
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+  opacity: 0;
+  position: absolute;
+  transition: opacity 0.3s ease;
+}
+
+.sidebar.sidebar-collapse .logo-text {
+  opacity: 0;
+}
+
+.sidebar.sidebar-collapse .logo-text-short {
+  opacity: 1;
 }
 
 .sidebar-nav {
-  height: calc(100% - 70px);
+  height: calc(100% - 60px);
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /* 主内容区样式 */
@@ -178,11 +277,13 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   background-color: #f5f7fa;
-  transition: all 0.3s ease;
+  margin-left: 240px;
+  transition: margin-left 0.3s ease;
+  height: 100vh;
 }
 
 .main-content.sidebar-collapse {
-  margin-left: 0;
+  margin-left: 64px;
 }
 
 /* 顶部导航样式 */
@@ -195,20 +296,48 @@ onMounted(() => {
   justify-content: space-between;
   padding: 0 20px;
   z-index: 100;
+  position: sticky;
+  top: 0;
+  left: 0;
 }
 
 .header-left {
   display: flex;
   align-items: center;
   gap: 20px;
+  flex: 1;
 }
 
 .header-right {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 12px;
 }
 
+/* 菜单按钮 */
+.menu-toggle-btn {
+  transition: all 0.3s ease;
+}
+
+.menu-toggle-btn:hover {
+  background-color: #f0f0f0;
+}
+
+/* 主题切换按钮 */
+.theme-toggle-btn {
+  transition: all 0.3s ease;
+}
+
+.theme-toggle-btn:hover {
+  background-color: #f0f0f0;
+}
+
+/* 面包屑 */
+.breadcrumb {
+  font-size: 14px;
+}
+
+/* 用户信息 */
 .user-info {
   display: flex;
   align-items: center;
@@ -217,6 +346,7 @@ onMounted(() => {
   padding: 5px 10px;
   border-radius: 4px;
   transition: background-color 0.3s;
+  font-size: 14px;
 }
 
 .user-info:hover {
@@ -228,5 +358,49 @@ onMounted(() => {
   flex: 1;
   padding: 20px;
   overflow-y: auto;
+  background-color: #f5f7fa;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .sidebar {
+    transform: translateX(-100%);
+  }
+  
+  .sidebar.sidebar-collapse {
+    transform: translateX(0);
+  }
+  
+  .main-content {
+    margin-left: 0;
+  }
+  
+  .main-content.sidebar-collapse {
+    margin-left: 0;
+  }
+  
+  .breadcrumb {
+    display: none;
+  }
+}
+
+/* 动画效果 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
 }
 </style>

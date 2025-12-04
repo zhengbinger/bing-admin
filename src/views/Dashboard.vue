@@ -72,13 +72,20 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
+import { ElMessage } from 'element-plus'
+import { useUserStore } from '../store/modules/user'
 
-const username = ref('管理员')
+const userStore = useUserStore()
+
+// 仪表盘统计数据
 const userCount = ref(0)
 const roleCount = ref(0)
 const permissionCount = ref(0)
 const logCount = ref(0)
 const recentLogs = ref([])
+
+// 加载状态
+const loading = ref(false)
 
 // 计算今天的日期
 const today = computed(() => {
@@ -89,57 +96,81 @@ const today = computed(() => {
   return `${year}-${month}-${day}`
 })
 
-const fetchDashboardData = () => {
-  // 模拟获取仪表盘数据
-  // 实际项目中应该调用真实的API接口
-  userCount.value = 156
-  roleCount.value = 12
-  permissionCount.value = 89
-  logCount.value = 234
-  
-  // 模拟最近操作日志
-  recentLogs.value = [
-    {
-      username: '张三',
-      action: '修改了用户信息',
-      time: '2025-11-11 15:30:22',
-      ip: '192.168.1.100'
-    },
-    {
-      username: '李四',
-      action: '添加了新角色',
-      time: '2025-11-11 14:25:10',
-      ip: '192.168.1.101'
-    },
-    {
-      username: '王五',
-      action: '删除了权限配置',
-      time: '2025-11-11 13:45:55',
-      ip: '192.168.1.102'
-    },
-    {
-      username: '赵六',
-      action: '登录系统',
-      time: '2025-11-11 10:15:30',
-      ip: '192.168.1.103'
-    }
-  ]
+// 获取当前用户名
+const username = computed(() => {
+  return userStore.userInfo?.nickname || userStore.userInfo?.username || '管理员'
+})
+
+// 获取仪表盘数据
+const fetchDashboardData = async () => {
+  loading.value = true
+  try {
+    // 模拟获取仪表盘数据
+    // 实际项目中应该调用真实的API接口
+    // const response = await dashboardApi.getDashboardData()
+    
+    // 模拟API延迟
+    await new Promise(resolve => setTimeout(resolve, 500))
+    
+    // 模拟数据
+    userCount.value = 156
+    roleCount.value = 12
+    permissionCount.value = 89
+    logCount.value = 234
+    
+    recentLogs.value = [
+      {
+        username: '张三',
+        action: '修改了用户信息',
+        time: '2025-11-11 15:30:22',
+        ip: '192.168.1.100'
+      },
+      {
+        username: '李四',
+        action: '添加了新角色',
+        time: '2025-11-11 14:25:10',
+        ip: '192.168.1.101'
+      },
+      {
+        username: '王五',
+        action: '删除了权限配置',
+        time: '2025-11-11 13:45:55',
+        ip: '192.168.1.102'
+      },
+      {
+        username: '赵六',
+        action: '登录系统',
+        time: '2025-11-11 10:15:30',
+        ip: '192.168.1.103'
+      }
+    ]
+    
+  } catch (error) {
+    ElMessage.error('获取仪表盘数据失败：' + (error.message || '未知错误'))
+    console.error('获取仪表盘数据失败:', error)
+  } finally {
+    loading.value = false
+  }
 }
 
-onMounted(() => {
-  // 获取用户信息
-  const userInfo = localStorage.getItem('userInfo')
-  if (userInfo) {
+// 初始化数据
+const initData = async () => {
+  // 如果用户信息未加载，尝试获取
+  if (!userStore.userInfo) {
     try {
-      const user = JSON.parse(userInfo)
-      username.value = user.nickname || user.username || '管理员'
-    } catch (e) {
-      console.error('解析用户信息失败', e)
+      await userStore.getUserInfo()
+    } catch (error) {
+      ElMessage.error('获取用户信息失败')
+      console.error('获取用户信息失败:', error)
     }
   }
   
   // 获取仪表盘数据
-  fetchDashboardData()
+  await fetchDashboardData()
+}
+
+onMounted(() => {
+  initData()
 })
 </script>
 

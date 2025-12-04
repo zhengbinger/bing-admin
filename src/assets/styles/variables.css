@@ -1,0 +1,144 @@
+/**
+ * 全局样式变量
+ * 定义统一的主题颜色、间距、字体等样式变量
+ * 便于维护和主题切换
+ * 
+ * @author zhengbing
+ * @date 2025-11-11
+ */
+
+:root {
+  /* 主题颜色 */
+  --primary-color: #409eff;
+  --primary-light: #ecf5ff;
+  --primary-dark: #337ecc;
+  
+  --success-color: #67c23a;
+  --success-light: #f0f9eb;
+  --success-dark: #529b2e;
+  
+  --warning-color: #e6a23c;
+  --warning-light: #fdf6ec;
+  --warning-dark: #d48806;
+  
+  --danger-color: #f56c6c;
+  --danger-light: #fef0f0;
+  --danger-dark: #c44e4e;
+  
+  --info-color: #909399;
+  --info-light: #f4f4f5;
+  --info-dark: #606266;
+  
+  /* 文本颜色 */
+  --text-primary: #303133;
+  --text-regular: #606266;
+  --text-secondary: #909399;
+  --text-placeholder: #c0c4cc;
+  
+  /* 边框颜色 */
+  --border-light: #ebeef5;
+  --border-regular: #dcdfe6;
+  --border-dark: #c0c4cc;
+  
+  /* 背景颜色 */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f5f7fa;
+  --bg-tertiary: #f0f2f5;
+  --bg-dark: #303133;
+  
+  /* 间距 */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-xxl: 48px;
+  
+  /* 圆角 */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-round: 50%;
+  
+  /* 字体 */
+  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-size-xs: 12px;
+  --font-size-sm: 13px;
+  --font-size-md: 14px;
+  --font-size-lg: 16px;
+  --font-size-xl: 18px;
+  --font-size-xxl: 20px;
+  
+  /* 行高 */
+  --line-height-xs: 18px;
+  --line-height-sm: 20px;
+  --line-height-md: 22px;
+  --line-height-lg: 24px;
+  --line-height-xl: 26px;
+  --line-height-xxl: 28px;
+  
+  /* 阴影 */
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.15);
+  --shadow-xl: 0 16px 32px rgba(0, 0, 0, 0.2);
+  
+  /* 过渡 */
+  --transition-fast: 0.2s ease;
+  --transition-normal: 0.3s ease;
+  --transition-slow: 0.5s ease;
+  
+  /* 宽度 */
+  --sidebar-width: 220px;
+  --sidebar-width-collapsed: 64px;
+  --header-height: 60px;
+  --footer-height: 60px;
+  
+  /* Z-index */
+  --z-index-dropdown: 1000;
+  --z-index-sticky: 1020;
+  --z-index-fixed: 1030;
+  --z-index-modal-backdrop: 1040;
+  --z-index-modal: 1050;
+  --z-index-popover: 1060;
+  --z-index-tooltip: 1070;
+}
+
+/* 暗黑主题变量（可选） */
+[data-theme="dark"] {
+  --primary-color: #409eff;
+  --primary-light: #0a0e1c;
+  --primary-dark: #53a8ff;
+  
+  --success-color: #67c23a;
+  --success-light: #0a1c0e;
+  --success-dark: #85ce61;
+  
+  --warning-color: #e6a23c;
+  --warning-light: #1c180a;
+  --warning-dark: #ebb563;
+  
+  --danger-color: #f56c6c;
+  --danger-light: #1c0a0a;
+  --danger-dark: #f78989;
+  
+  --info-color: #909399;
+  --info-light: #151515;
+  --info-dark: #a6a9ad;
+  
+  --text-primary: #f5f7fa;
+  --text-regular: #c0c4cc;
+  --text-secondary: #909399;
+  --text-placeholder: #606266;
+  
+  --border-light: #2d3038;
+  --border-regular: #4e525c;
+  --border-dark: #606266;
+  
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #262626;
+  --bg-tertiary: #303030;
+  --bg-dark: #000000;
+}

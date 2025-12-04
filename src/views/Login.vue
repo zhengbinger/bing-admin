@@ -45,6 +45,34 @@
               />
             </el-form-item>
             
+            <!-- 验证码输入区域 -->
+            <el-form-item prop="captcha" class="login-input-item">
+              <div class="captcha-container">
+                <el-input
+                  v-model="loginForm.captcha"
+                  placeholder="请输入验证码"
+                  prefix-icon="el-icon-key"
+                  class="login-input captcha-input"
+                  size="large"
+                />
+                <div class="captcha-image-wrapper">
+                  <img
+                    v-if="captchaImage"
+                    :src="captchaImage"
+                    alt="验证码"
+                    class="captcha-image"
+                    @click="refreshCaptcha"
+                    :title="'点击刷新验证码'"
+                  />
+                  <el-skeleton v-else animated />
+                  <div
+                    v-if="captchaLoading"
+                    class="captcha-loading"
+                  />
+                </div>
+              </div>
+            </el-form-item>
+            
             <el-form-item>
               <el-button
                 type="primary"
@@ -65,19 +93,30 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, reactive, computed, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import axios from 'axios'
+import { useUserStore } from '../store/modules/user'
+import userApi from '../api/user'
+import request from '../utils/request'
 
 const router = useRouter()
+const route = useRoute()
+const userStore = useUserStore()
+
 const loginFormRef = ref(null)
 const loading = ref(false)
 
 const loginForm = reactive({
   username: '',
-  password: ''
+  password: '',
+  captcha: '',
+  captchaKey: ''
 })
+
+// 验证码相关状态
+const captchaImage = ref('')
+const captchaLoading = ref(false)
 
 const loginRules = {
   username: [
@@ -87,7 +126,44 @@ const loginRules = {
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
     { min: 6, message: '密码长度至少 6 个字符', trigger: 'blur' }
+  ],
+  captcha: [
+    { required: true, message: '请输入验证码', trigger: 'blur' },
+    { min: 4, max: 6, message: '验证码长度在 4 到 6 个字符', trigger: 'blur' }
   ]
+}
+
+// 获取重定向地址
+const redirectPath = computed(() => {
+  return route.query.redirect || '/'
+})
+
+// 获取验证码
+const getCaptcha = async () => {
+  try {
+    captchaLoading.value = true
+    const response = await request({
+      url: '/captcha/generate/image',
+      method: 'get'
+    })
+    
+    if (response.code === 200) {
+      captchaImage.value = response.data.captchaContent
+      loginForm.captchaKey = response.data.captchaKey
+    } else {
+      ElMessage.error('获取验证码失败')
+    }
+  } catch (error) {
+    console.error('获取验证码失败:', error)
+    ElMessage.error('获取验证码失败，请重试')
+  } finally {
+    captchaLoading.value = false
+  }
+}
+
+// 刷新验证码
+const refreshCaptcha = () => {
+  getCaptcha()
 }
 
 const handleLogin = async () => {
@@ -95,39 +171,32 @@ const handleLogin = async () => {
     await loginFormRef.value.validate()
     loading.value = true
     
-    // 模拟登录请求
-    // 实际项目中应该调用真实的登录接口
-    // const response = await axios.post('/api/login', loginForm)
+    // 使用封装的API进行登录
+    const response = await userStore.login(loginForm)
     
-    // 模拟成功登录
-    setTimeout(() => {
-      loading.value = false
-      
-      // 保存token和用户信息
-      const mockToken = 'mock_token_' + Date.now()
-      const userInfo = {
-        id: 1,
-        username: loginForm.username,
-        nickname: '管理员',
-        avatar: 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png'
-      }
-      
-      localStorage.setItem('token', mockToken)
-      localStorage.setItem('userInfo', JSON.stringify(userInfo))
-      
-      ElMessage.success('登录成功')
-      router.push({ name: 'dashboard' })
-    }, 1000)
+    loading.value = false
+    ElMessage.success('登录成功')
+    
+    // 登录成功后跳转到目标页面
+    router.push(redirectPath.value)
     
   } catch (error) {
     loading.value = false
-    if (error.message) {
-      ElMessage.error(error.message)
-    } else {
-      ElMessage.error('登录失败，请重试')
-    }
+    
+    // 登录失败后自动刷新验证码
+    refreshCaptcha()
+    
+    const errorMsg = error.response?.data?.message || error.message || '登录失败，请重试'
+    ElMessage.error(errorMsg)
+    
+    console.error('登录失败:', error)
   }
 }
+
+// 组件挂载时获取验证码
+onMounted(() => {
+  getCaptcha()
+})
 </script>
 
 <style scoped>
@@ -306,6 +375,74 @@ const handleLogin = async () => {
 
 :deep(.login-input .el-input__suffix-inner .el-icon:hover) {
   transform: scale(1.1);
+}
+
+/* 响应式设计 - 验证码调整 */
+@media (max-width: 768px) {
+  .captcha-container {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .captcha-input {
+    width: 100%;
+  }
+  
+  .captcha-image-wrapper {
+    width: 100%;
+    height: 48px;
+  }
+}
+
+/* 验证码容器 */
+.captcha-container {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+}
+
+.captcha-input {
+  flex: 1;
+}
+
+.captcha-image-wrapper {
+  position: relative;
+  width: 120px;
+  height: 52px;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.captcha-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.captcha-image:hover {
+  transform: scale(1.02);
+}
+
+.captcha-loading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.7);
+  background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAiIGhlaWdodD0iMzAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMTUiIGN5PSIxNSIgcj0iMTIiIGZpbGw9IiM2MjY2ZWQiLz48cGF0aCBkPSJNMCAxNWgxMXYxNUgwVjE1em0zMCAxNWgxMXYxNUgzMFYxNXoiIGZpbGw9IiM2MjY2ZWQiLz48cGF0aCBkPSJNMCAxNWgxMXYxNUgwVjE1em0zMCAxNWgxMXYxNUgzMFYxNXoiIGZpbGw9IiM2MjY2ZWQiIG9wYWNpdHk9IjAuMyIvPjxwYXRoIGQ9Ik0wIDE1aDEwdjE1SDBWMTV6bTMwIDE1aDEwdjE1SDMwVjE1eiIgZmlsbD0iIzYyNjZlZCIgb3BhY2l0eT0iMC42Ii8+PC9zdmc+');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 24px 24px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 /* 登录按钮 */
