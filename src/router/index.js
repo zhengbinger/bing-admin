@@ -78,7 +78,16 @@ const asyncRoutes = [
       alwaysShow: true
     },
     children: [
-      {        path: 'user',        name: 'user',        component: loadView('User'),        meta: {          title: '用户管理',          icon: 'User',          permissions: ['user:list']        }      },
+      {
+        path: 'user',
+        name: 'user',
+        component: loadView('User'),
+        meta: {
+          title: '用户管理',
+          icon: 'User',
+          permissions: ['user:list']
+        }
+      },
       {
         path: 'role',
         name: 'role',
@@ -98,6 +107,57 @@ const asyncRoutes = [
           icon: 'Lock',
           permissions: ['system:permission:list']
         }
+      },
+      {
+        path: 'organization',
+        name: 'organization',
+        component: loadView('Organization'),
+        meta: {
+          title: '组织管理',
+          icon: 'OfficeBuilding',
+          permissions: ['system:organization:list']
+        }
+      },
+      {
+        path: 'data-dict',
+        name: 'dataDict',
+        component: loadView('DataDict'),
+        meta: {
+          title: '数据字典',
+          icon: 'Grid',
+          permissions: ['system:data-dict:list']
+        }
+      },
+      {
+        path: 'system-config',
+        name: 'systemConfig',
+        component: loadView('SystemConfig'),
+        meta: {
+          title: '系统配置',
+          icon: 'Tools',
+          permissions: ['system:config:list']
+        }
+      },
+      {
+        path: 'login-record',
+        name: 'loginRecord',
+        component: loadView('LoginRecord'),
+        meta: {
+          title: '登录记录',
+          icon: 'DocumentCopy',
+          permissions: ['system:login-record:list']
+        }
+      },
+      {
+        path: 'white-list',
+        name: 'whiteList',
+        component: loadView('WhiteList'),
+        meta: {
+          title: '白名单管理',
+          icon: 'Ticket',
+          permissions: ['system:white-list:list']
+        }
+      }
       }
     ]
   }
