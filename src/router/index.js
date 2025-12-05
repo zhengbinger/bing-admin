@@ -158,7 +158,6 @@ const asyncRoutes = [
           permissions: ['system:white-list:list']
         }
       }
-      }
     ]
   }
 ]
