@@ -32,6 +32,21 @@
                 size="large"
               />
             </el-form-item>
+            <el-form-item prop="channel" class="login-input-item">
+              <el-select
+                v-model="loginForm.channel"
+                placeholder="请选择登录渠道"
+                :disabled="loading"
+                class="login-input"
+                size="large"
+                style="width: 100%"
+              >
+                <el-option label="网页端" :value="'WEB'" />
+                <el-option label="移动端" :value="'MOBILE'" />
+                <el-option label="API接口" :value="'API'" />
+                <el-option label="第三方登录" :value="'THIRD_PARTY'" />
+              </el-select>
+            </el-form-item>
             
             <el-form-item prop="password" class="login-input-item">
               <el-input
@@ -45,8 +60,8 @@
               />
             </el-form-item>
             
-            <!-- 验证码输入区域 -->
-            <el-form-item prop="captcha" class="login-input-item">
+            <!-- 验证码输入区域，根据配置决定是否显示 -->
+            <el-form-item v-if="isCaptchaEnabled" prop="captcha" class="login-input-item">
               <div class="captcha-container">
                 <el-input
                   v-model="loginForm.captcha"
@@ -93,12 +108,12 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '../store/modules/user'
 import userApi from '../api/user'
-import request from '../utils/request'
+import captchaApi from '../api/captcha'
 
 const router = useRouter()
 const route = useRoute()
@@ -110,6 +125,7 @@ const loading = ref(false)
 const loginForm = reactive({
   username: '',
   password: '',
+  channel: 'WEB',
   captcha: '',
   captchaKey: ''
 })
@@ -117,35 +133,73 @@ const loginForm = reactive({
 // 验证码相关状态
 const captchaImage = ref('')
 const captchaLoading = ref(false)
+const captchaConfig = ref(null)
+const isCaptchaEnabled = ref(false)
 
-const loginRules = {
-  username: [
-    { required: true, message: '请输入用户名', trigger: 'blur' },
-    { min: 2, max: 20, message: '用户名长度在 2 到 20 个字符', trigger: 'blur' }
-  ],
-  password: [
-    { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, message: '密码长度至少 6 个字符', trigger: 'blur' }
-  ],
-  captcha: [
-    { required: true, message: '请输入验证码', trigger: 'blur' },
-    { min: 4, max: 6, message: '验证码长度在 4 到 6 个字符', trigger: 'blur' }
-  ]
-}
+// 动态登录表单规则
+const loginRules = computed(() => {
+  const rules = {
+    username: [
+      { required: true, message: '请输入用户名', trigger: 'blur' },
+      { min: 2, max: 20, message: '用户名长度在 2 到 20 个字符', trigger: 'blur' }
+    ],
+    password: [
+      { required: true, message: '请输入密码', trigger: 'blur' },
+      { min: 6, message: '密码长度至少 6 个字符', trigger: 'blur' }
+    ],
+    channel: [
+      { required: true, message: '请选择登录渠道', trigger: 'change' }
+    ]
+  }
+  
+  // 根据验证码配置动态添加验证码验证规则
+  if (isCaptchaEnabled.value) {
+    rules.captcha = [
+      { required: true, message: '请输入验证码', trigger: 'blur' },
+      { min: 4, max: 6, message: '验证码长度在 4 到 6 个字符', trigger: 'blur' }
+    ]
+  }
+  
+  return rules
+})
 
 // 获取重定向地址
 const redirectPath = computed(() => {
   return route.query.redirect || '/'
 })
 
+// 获取验证码配置
+const getCaptchaConfig = async () => {
+  try {
+    const response = await captchaApi.getCaptchaConfig(loginForm.channel)
+    if (response.code === 200) {
+      captchaConfig.value = response.data
+      isCaptchaEnabled.value = response.data.enabled || false
+      
+      // 如果启用了验证码，则获取验证码
+      if (isCaptchaEnabled.value) {
+        await getCaptcha()
+      } else {
+        // 如果未启用验证码，则清空验证码相关信息
+        captchaImage.value = ''
+        loginForm.captcha = ''
+        loginForm.captchaKey = ''
+      }
+    }
+  } catch (error) {
+    console.error('获取验证码配置失败:', error)
+    // 如果获取配置失败，默认不启用验证码
+    isCaptchaEnabled.value = false
+  }
+}
+
 // 获取验证码
 const getCaptcha = async () => {
+  if (!isCaptchaEnabled.value) return
+  
   try {
     captchaLoading.value = true
-    const response = await request({
-      url: '/captcha/generate/image',
-      method: 'get'
-    })
+    const response = await captchaApi.generateCaptcha(loginForm.channel)
     
     if (response.code === 200) {
       captchaImage.value = response.data.captchaContent
@@ -165,6 +219,15 @@ const getCaptcha = async () => {
 const refreshCaptcha = () => {
   getCaptcha()
 }
+
+// 监听渠道变化，重新获取验证码配置
+watch(
+  () => loginForm.channel,
+  (newChannel) => {
+    getCaptchaConfig()
+  },
+  { immediate: true }
+)
 
 const handleLogin = async () => {
   try {
@@ -193,9 +256,9 @@ const handleLogin = async () => {
   }
 }
 
-// 组件挂载时获取验证码
+// 组件挂载时获取验证码配置
 onMounted(() => {
-  getCaptcha()
+  getCaptchaConfig()
 })
 </script>
 

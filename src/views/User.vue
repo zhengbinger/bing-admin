@@ -46,6 +46,14 @@
         <el-table-column prop="nickname" label="昵称" width="120" />
         <el-table-column prop="email" label="邮箱" width="200" />
         <el-table-column prop="phone" label="手机号" width="150" />
+        <el-table-column prop="channels" label="允许登录渠道" min-width="150">
+          <template #default="scope">
+            <el-tag v-for="channel in parseChannels(scope.row.channels)" :key="channel" size="small" style="margin-right: 4px">
+              {{ channelLabel(channel) }}
+            </el-tag>
+            <span v-if="!scope.row.channels || parseChannels(scope.row.channels).length === 0" style="color: #909399">无限制</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="status" label="状态" width="100">
           <template #default="scope">
             <el-switch v-model="scope.row.status" active-value="1" inactive-value="0" @change="(value) => handleStatusChange(scope.row, value)" />
@@ -108,6 +116,14 @@
             <el-option label="禁用" :value="0" />
           </el-select>
         </el-form-item>
+        <el-form-item label="允许登录渠道">
+          <el-select v-model="addUserForm.channels" multiple placeholder="请选择允许的登录渠道" style="width: 100%">
+            <el-option label="网页端" :value="'WEB'" />
+            <el-option label="移动端" :value="'MOBILE'" />
+            <el-option label="API接口" :value="'API'" />
+            <el-option label="第三方登录" :value="'THIRD_PARTY'" />
+          </el-select>
+        </el-form-item>
       </el-form>
       <template #footer>
         <span class="dialog-footer">
@@ -136,6 +152,14 @@
           <el-select v-model="editUserForm.status" placeholder="请选择状态">
             <el-option label="启用" :value="1" />
             <el-option label="禁用" :value="0" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="允许登录渠道">
+          <el-select v-model="editUserForm.channels" multiple placeholder="请选择允许的登录渠道" style="width: 100%">
+            <el-option label="网页端" :value="'WEB'" />
+            <el-option label="移动端" :value="'MOBILE'" />
+            <el-option label="API接口" :value="'API'" />
+            <el-option label="第三方登录" :value="'THIRD_PARTY'" />
           </el-select>
         </el-form-item>
       </el-form>
@@ -189,7 +213,19 @@ const pagination = reactive({
 
 // 添加用户对话框
 const addUserDialogVisible = ref(false)
+
+// 添加用户表单引用
 const addUserFormRef = ref(null)
+
+// 定义渠道选项
+const channelOptions = {
+  'WEB': '网页端',
+  'MOBILE': '移动端',
+  'API': 'API接口',
+  'THIRD_PARTY': '第三方登录'
+}
+
+// 添加用户表单
 const addUserForm = reactive({
   username: '',
   nickname: '',
@@ -197,19 +233,23 @@ const addUserForm = reactive({
   confirmPassword: '',
   email: '',
   phone: '',
-  status: 1
+  status: 1,
+  channels: []
 })
 
 // 编辑用户对话框
 const editUserDialogVisible = ref(false)
 const editUserFormRef = ref(null)
+
+// 编辑用户表单
 const editUserForm = reactive({
   id: null,
   username: '',
   nickname: '',
   email: '',
   phone: '',
-  status: 1
+  status: 1,
+  channels: []
 })
 
 // 删除用户对话框
@@ -305,11 +345,27 @@ const handleCurrentPageChange = (page) => {
   getUserList()
 }
 
+// 解析渠道JSON字符串为数组
+const parseChannels = (channels) => {
+  if (!channels) return []
+  try {
+    return typeof channels === 'string' ? JSON.parse(channels) : channels
+  } catch (e) {
+    console.error('解析渠道失败:', e)
+    return []
+  }
+}
+
+// 获取渠道标签
+const channelLabel = (channel) => {
+  return channelOptions[channel] || channel
+}
+
 // 显示添加用户对话框
 const showAddUserDialog = () => {
   // 重置表单
   Object.keys(addUserForm).forEach(key => {
-    addUserForm[key] = ''
+    addUserForm[key] = key === 'channels' ? [] : ''
   })
   addUserForm.status = 1
   nextTick(() => {
@@ -324,6 +380,8 @@ const showAddUserDialog = () => {
 const showEditUserDialog = (user) => {
   // 填充表单
   Object.assign(editUserForm, user)
+  // 解析渠道字段
+  editUserForm.channels = parseChannels(user.channels)
   editUserDialogVisible.value = true
 }
 
@@ -339,7 +397,12 @@ const handleAddUser = async () => {
   
   try {
     await addUserFormRef.value.validate()
-    const response = await api.user.createUser(addUserForm)
+    // 处理渠道字段，转换为JSON字符串
+    const userData = {
+      ...addUserForm,
+      channels: addUserForm.channels.length > 0 ? JSON.stringify(addUserForm.channels) : null
+    }
+    const response = await api.user.createUser(userData)
     ElMessage.success('添加用户成功')
     addUserDialogVisible.value = false
     getUserList()
@@ -357,7 +420,12 @@ const handleUpdateUser = async () => {
   
   try {
     await editUserFormRef.value.validate()
-    const response = await api.user.updateUser(editUserForm.id, editUserForm)
+    // 处理渠道字段，转换为JSON字符串
+    const userData = {
+      ...editUserForm,
+      channels: editUserForm.channels.length > 0 ? JSON.stringify(editUserForm.channels) : null
+    }
+    const response = await api.user.updateUser(editUserForm.id, userData)
     ElMessage.success('更新用户成功')
     editUserDialogVisible.value = false
     getUserList()
