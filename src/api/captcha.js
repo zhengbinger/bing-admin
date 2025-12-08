@@ -15,11 +15,46 @@ const getCaptchaConfig = (channel) => {
 }
 
 // 生成验证码
-const generateCaptcha = (channel) => {
+const generateCaptcha = (channel, captchaType = 'image') => {
   return request({
-    url: '/api/captcha/generate/image',
+    url: `/api/captcha/generate/${captchaType.toLowerCase()}`,
     method: 'get',
     params: { channel }
+  })
+}
+
+// 刷新验证码
+const refreshCaptcha = (channel, captchaType = 'image') => {
+  return request({
+    url: `/api/captcha/refresh/${captchaType.toLowerCase()}`,
+    method: 'get',
+    params: { channel }
+  })
+}
+
+// 验证验证码
+const validateCaptcha = (key, code, captchaType = 'image', channel) => {
+  return request({
+    url: '/api/captcha/validate',
+    method: 'post',
+    data: {
+      key,
+      code,
+      type: captchaType,
+      channel
+    }
+  })
+}
+
+// 清理验证码
+const cleanCaptcha = (key, captchaType = 'image') => {
+  return request({
+    url: '/api/captcha/clean',
+    method: 'post',
+    data: {
+      key,
+      type: captchaType
+    }
   })
 }
 
@@ -61,6 +96,9 @@ const deleteConfig = (id) => {
 export default {
   getCaptchaConfig,
   generateCaptcha,
+  refreshCaptcha,
+  validateCaptcha,
+  cleanCaptcha,
   getConfigList,
   addConfig,
   updateConfig,

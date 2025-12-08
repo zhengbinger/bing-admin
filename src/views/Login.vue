@@ -127,7 +127,8 @@ const loginForm = reactive({
   password: '',
   channel: 'WEB',
   captcha: '',
-  captchaKey: ''
+  captchaKey: '',
+  captchaType: ''
 })
 
 // 验证码相关状态
@@ -195,15 +196,24 @@ const getCaptchaConfig = async () => {
 
 // 获取验证码
 const getCaptcha = async () => {
-  if (!isCaptchaEnabled.value) return
+  if (!isCaptchaEnabled.value || !captchaConfig.value) return
   
   try {
     captchaLoading.value = true
-    const response = await captchaApi.generateCaptcha(loginForm.channel)
+    // 从配置中获取验证码类型，如果没有配置则使用默认值'image'
+    const captchaType = captchaConfig.value.captchaType || 'IMAGE'
+    const response = await captchaApi.generateCaptcha(loginForm.channel, captchaType)
     
     if (response.code === 200) {
-      captchaImage.value = response.data.captchaContent
+      if (captchaType === 'IMAGE') {
+        captchaImage.value = response.data.captchaContent
+      } else {
+        // 非图片验证码类型，显示提示信息
+        captchaImage.value = ''
+        ElMessage.success('验证码已发送')
+      }
       loginForm.captchaKey = response.data.captchaKey
+      loginForm.captchaType = captchaType
     } else {
       ElMessage.error('获取验证码失败')
     }
