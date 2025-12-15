@@ -112,8 +112,7 @@ import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '../store/modules/user'
-import userApi from '../api/user'
-import captchaApi from '../api/captcha'
+import api from '../api'
 
 const router = useRouter()
 const route = useRoute()
@@ -172,7 +171,7 @@ const redirectPath = computed(() => {
 // 获取验证码配置
 const getCaptchaConfig = async () => {
   try {
-    const response = await captchaApi.getCaptchaConfig(loginForm.channel)
+    const response = await api.captcha.getCaptchaConfig(loginForm.channel)
     if (response.code === 200) {
       captchaConfig.value = response.data
       isCaptchaEnabled.value = response.data.enabled || false
@@ -202,7 +201,7 @@ const getCaptcha = async () => {
     captchaLoading.value = true
     // 从配置中获取验证码类型，如果没有配置则使用默认值'image'
     const captchaType = captchaConfig.value.captchaType || 'IMAGE'
-    const response = await captchaApi.generateCaptcha(loginForm.channel, captchaType)
+    const response = await api.captcha.generateCaptcha(loginForm.channel, captchaType)
     
     if (response.code === 200) {
       if (captchaType === 'IMAGE') {

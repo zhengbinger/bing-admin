@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
-import userApi from '../../api/user'
+import api from '../../api'
 
 /**
  * 用户状态管理
@@ -20,7 +20,7 @@ export const useUserStore = defineStore('user', () => {
    */
   const login = async (data) => {
     try {
-      const response = await userApi.login(data)
+      const response = await api.auth.login(data)
       const { token: newToken, user } = response.data
       
       // 保存状态
@@ -44,7 +44,7 @@ export const useUserStore = defineStore('user', () => {
    */
   const logout = async () => {
     try {
-      await userApi.logout()
+      await api.auth.logout()
     } catch (error) {
       console.error('退出登录失败:', error)
     } finally {
@@ -66,7 +66,7 @@ export const useUserStore = defineStore('user', () => {
   const getCurrentUser = async () => {
     try {
       // 获取用户基本信息和权限
-      const response = await userApi.getCurrentUser()
+      const response = await api.auth.getCurrentUser()
       
       // 处理后端返回的新数据结构
       // { user: {...}, permissions: [...] }

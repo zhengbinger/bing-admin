@@ -1,6 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useUserStore } from '../store/modules/user'
-import userApi from '../api/user'
 
 /**
  * 路由配置
@@ -156,6 +155,72 @@ const asyncRoutes = [
           title: '白名单管理',
           icon: 'Ticket',
           permissions: ['system:white-list:list']
+        }
+      },
+      {
+        path: 'third-party-user',
+        name: 'thirdPartyUser',
+        component: loadView('ThirdPartyUser'),
+        meta: {
+          title: '第三方用户',
+          icon: 'UserFilled',
+          permissions: ['system:third-party-user:list']
+        }
+      },
+      {
+        path: 'audit-log',
+        name: 'auditLog',
+        component: loadView('AuditLog'),
+        meta: {
+          title: '审计日志',
+          icon: 'Document',
+          permissions: ['system:audit-log:list']
+        }
+      }
+    ]
+  },
+  {
+    path: '/cache',
+    name: 'cache',
+    component: () => import('../layout/Layout.vue'),
+    meta: {
+      title: '缓存管理',
+      requiresAuth: true,
+      icon: 'Coin',
+      alwaysShow: true
+    },
+    children: [
+      {
+        path: 'management',
+        name: 'cacheManagement',
+        component: loadView('CacheManagement'),
+        meta: {
+          title: '缓存管理',
+          icon: 'Coin',
+          permissions: ['cache:management']
+        }
+      }
+    ]
+  },
+  {
+    path: '/wechat',
+    name: 'wechat',
+    component: () => import('../layout/Layout.vue'),
+    meta: {
+      title: '微信管理',
+      requiresAuth: true,
+      icon: 'ChatDotRound',
+      alwaysShow: true
+    },
+    children: [
+      {
+        path: 'management',
+        name: 'wechatManagement',
+        component: loadView('WechatManagement'),
+        meta: {
+          title: '微信管理',
+          icon: 'ChatDotRound',
+          permissions: ['wechat:management']
         }
       }
     ]
