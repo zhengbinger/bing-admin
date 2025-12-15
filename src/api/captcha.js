@@ -1,4 +1,4 @@
-import request from '@/utils/request'
+import request from '../utils/request'
 
 /**
  * 验证码API模块
@@ -93,7 +93,7 @@ const deleteConfig = (id) => {
   })
 }
 
-export default {
+const captchaApi = {
   getCaptchaConfig,
   generateCaptcha,
   refreshCaptcha,
@@ -104,3 +104,5 @@ export default {
   updateConfig,
   deleteConfig
 }
+
+export default captchaApi

@@ -1,49 +1,109 @@
-import request from '@/utils/request'
+import request from '../utils/request'
 
-// 登录记录管理API
+/**
+ * 登录记录管理API模块
+ * 提供登录记录查询、统计等接口
+ */
 
-export default {
-  // 获取登录记录列表（分页）
-  getLoginRecords(page = 1, size = 10, params = {}) {
-    return request({
-      url: '/login-records',
-      method: 'get',
-      params: { page, size, ...params }
-    })
-  },
-  
-  // 获取指定用户的登录记录
-  getUserLoginRecords(userId, page = 1, size = 10) {
-    return request({
-      url: `/login-records/user/${userId}`,
-      method: 'get',
-      params: { page, size }
-    })
-  },
-  
-  // 获取最近的登录记录
-  getRecentLoginRecords(limit = 10) {
-    return request({
-      url: '/login-records/recent',
-      method: 'get',
-      params: { limit }
-    })
-  },
-  
-  // 获取失败的登录记录
-  getFailedLoginRecords(page = 1, size = 10) {
-    return request({
-      url: '/login-records/failed',
-      method: 'get',
-      params: { page, size }
-    })
-  },
-  
-  // 清理过期的登录记录
-  cleanExpiredLoginRecords() {
-    return request({
-      url: '/login-records/clean',
-      method: 'delete'
-    })
-  }
+// 获取登录记录列表
+const getList = (params) => {
+  return request({
+    url: '/api/loginRecords/list',
+    method: 'get',
+    params
+  })
 }
+
+// 获取登录记录详情
+const getDetail = (id) => {
+  return request({
+    url: `/api/loginRecords/${id}`,
+    method: 'get'
+  })
+}
+
+// 获取指定用户的登录记录
+const getUserRecords = (userId, params) => {
+  return request({
+    url: `/api/loginRecords/user/${userId}`,
+    method: 'get',
+    params
+  })
+}
+
+// 获取最近的登录记录
+const getRecent = (params) => {
+  return request({
+    url: '/api/loginRecords/recent',
+    method: 'get',
+    params
+  })
+}
+
+// 获取失败的登录记录
+const getFailedRecords = (params) => {
+  return request({
+    url: '/api/loginRecords/failed',
+    method: 'get',
+    params
+  })
+}
+
+// 获取登录统计信息
+const getStatistics = (params) => {
+  return request({
+    url: '/api/loginRecords/statistics',
+    method: 'get',
+    params
+  })
+}
+
+// 清理过期的登录记录
+const cleanExpired = () => {
+  return request({
+    url: '/api/loginRecords/clean',
+    method: 'delete'
+  })
+}
+
+// 导出登录记录
+const exportRecords = (params) => {
+  return request({
+    url: '/api/loginRecords/export',
+    method: 'get',
+    params,
+    responseType: 'blob'
+  })
+}
+
+// 删除登录记录
+const deleteRecord = (id) => {
+  return request({
+    url: `/api/loginRecords/${id}`,
+    method: 'delete'
+  })
+}
+
+// 批量删除登录记录
+const batchDelete = (ids) => {
+  return request({
+    url: '/api/loginRecords/batch',
+    method: 'delete',
+    data: { ids }
+  })
+}
+
+const loginRecordApi = {
+  getList,
+  getDetail,
+  getUserRecords,
+  getRecent,
+  getFailedRecords,
+  getStatistics,
+  cleanExpired,
+  exportRecords,
+  delete: deleteRecord,
+  batchDelete
+}
+
+export default loginRecordApi

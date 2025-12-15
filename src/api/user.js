@@ -1,83 +1,67 @@
-import request from '@/utils/request'
+import request from '../utils/request'
 
 /**
- * 用户API模块
- * 提供用户登录、获取用户信息、用户管理等接口
+ * 用户管理API模块
+ * 提供用户CRUD操作、权限管理等接口
+ * 注意：认证相关接口（登录、登出等）已移至 auth.js
  */
 
-// 登录
-const login = (data) => {
-  return request({
-    url: '/auth/login',
-    method: 'post',
-    data
-  })
-}
-
-// 退出登录
-const logout = () => {
-  return request({
-    url: '/auth/logout',
-    method: 'post'
-  })
-}
-
-// 获取当前用户信息
-const getCurrentUser = () => {
-  return request({
-    url: '/user/info',
-    method: 'get'
-  })
-}
-
 // 获取用户列表
-const getUserList = (params) => {
+const getList = (params) => {
   return request({
-    url: '/user/list',
+    url: '/api/user/list',
     method: 'get',
     params
   })
 }
 
-// 创建用户
-const createUser = (data) => {
+// 获取用户详情
+const getDetail = (id) => {
   return request({
-    url: '/user/create',
+    url: `/api/user/${id}`,
+    method: 'get'
+  })
+}
+
+// 创建用户
+const create = (data) => {
+  return request({
+    url: '/api/user',
     method: 'post',
     data
   })
 }
 
 // 更新用户
-const updateUser = (id, data) => {
+const update = (id, data) => {
   return request({
-    url: `/user/`,
+    url: `/api/user/${id}`,
     method: 'put',
-    data: { ...data, id }
+    data
   })
 }
 
 // 删除用户
 const deleteUser = (id) => {
   return request({
-    url: `/user/detail/${id}`,
+    url: `/api/user/${id}`,
     method: 'delete'
   })
 }
 
 // 批量删除用户
-const batchDeleteUser = (ids) => {
+const batchDelete = (ids) => {
   return request({
-    url: '/user/batch',
+    url: '/api/user/batch',
     method: 'delete',
-    data: ids
+    data: { ids }
   })
 }
 
 // 获取用户菜单树
-const getUserMenuTree = () => {
+const getMenuTree = () => {
   return request({
-    url: '/user/menu_tree',
+    url: '/api/user/menu-tree',
     method: 'get'
   })
 }
@@ -85,21 +69,50 @@ const getUserMenuTree = () => {
 // 重置用户密码
 const resetPassword = (id, data) => {
   return request({
-    url: `/user/${id}/password`,
+    url: `/api/user/${id}/reset-password`,
     method: 'put',
     data
   })
 }
 
-export default {
-  login,
-  logout,
-  getCurrentUser,
-  getUserMenuTree,
-  getUserList,
-  createUser,
-  updateUser,
-  deleteUser,
-  batchDeleteUser,
-  resetPassword
+// 修改用户状态
+const updateStatus = (id, status) => {
+  return request({
+    url: `/api/user/${id}/status`,
+    method: 'put',
+    data: { status }
+  })
 }
+
+// 获取用户权限
+const getPermissions = (id) => {
+  return request({
+    url: `/api/user/${id}/permissions`,
+    method: 'get'
+  })
+}
+
+// 分配用户角色
+const assignRoles = (id, roleIds) => {
+  return request({
+    url: `/api/user/${id}/roles`,
+    method: 'put',
+    data: { roleIds }
+  })
+}
+
+const userApi = {
+  getList,
+  getDetail,
+  create,
+  update,
+  delete: deleteUser,
+  batchDelete,
+  getMenuTree,
+  resetPassword,
+  updateStatus,
+  getPermissions,
+  assignRoles
+}
+
+export default userApi

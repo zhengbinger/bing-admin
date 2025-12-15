@@ -1,39 +1,40 @@
 import request from '../utils/request'
 
 /**
- * 角色API模块
- * 提供角色管理相关的接口
+ * 角色管理API模块
+ * 提供角色CRUD操作、权限分配等接口
  */
 
 // 获取角色列表
-const getRoleList = () => {
+const getList = (params) => {
   return request({
-    url: '/roles',
-    method: 'get'
+    url: '/api/roles/list',
+    method: 'get',
+    params
   })
 }
 
 // 获取角色详情
-const getRoleById = (id) => {
+const getDetail = (id) => {
   return request({
-    url: `/roles/detail/${id}`,
+    url: `/api/roles/${id}`,
     method: 'get'
   })
 }
 
 // 创建角色
-const createRole = (data) => {
+const create = (data) => {
   return request({
-    url: '/roles',
+    url: '/api/roles',
     method: 'post',
     data
   })
 }
 
 // 更新角色
-const updateRole = (id, data) => {
+const update = (id, data) => {
   return request({
-    url: `/roles/${id}`,
+    url: `/api/roles/${id}`,
     method: 'put',
     data
   })
@@ -42,34 +43,65 @@ const updateRole = (id, data) => {
 // 删除角色
 const deleteRole = (id) => {
   return request({
-    url: `/roles/detail/${id}`,
+    url: `/api/roles/${id}`,
     method: 'delete'
   })
 }
 
-// 根据角色ID获取权限列表
-const getPermissionsByRoleId = (roleId) => {
+// 批量删除角色
+const batchDelete = (ids) => {
   return request({
-    url: `/permissions/by-role/${roleId}`,
+    url: '/api/roles/batch',
+    method: 'delete',
+    data: { ids }
+  })
+}
+
+// 获取角色权限
+const getPermissions = (roleId) => {
+  return request({
+    url: `/api/roles/${roleId}/permissions`,
     method: 'get'
   })
 }
 
-// 为角色分配权限
-const assignPermissionsToRole = (roleId, permissionIds) => {
+// 分配角色权限
+const assignPermissions = (roleId, permissionIds) => {
   return request({
-    url: `/permissions/assign-to-role/${roleId}`,
-    method: 'post',
-    data: permissionIds
+    url: `/api/roles/${roleId}/permissions`,
+    method: 'put',
+    data: { permissionIds }
   })
 }
 
-export default {
-  getRoleList,
-  getRoleById,
-  createRole,
-  updateRole,
-  deleteRole,
-  getPermissionsByRoleId,
-  assignPermissionsToRole
+// 获取角色用户列表
+const getUsers = (roleId) => {
+  return request({
+    url: `/api/roles/${roleId}/users`,
+    method: 'get'
+  })
 }
+
+// 修改角色状态
+const updateStatus = (id, status) => {
+  return request({
+    url: `/api/roles/${id}/status`,
+    method: 'put',
+    data: { status }
+  })
+}
+
+const roleApi = {
+  getList,
+  getDetail,
+  create,
+  update,
+  delete: deleteRole,
+  batchDelete,
+  getPermissions,
+  assignPermissions,
+  getUsers,
+  updateStatus
+}
+
+export default roleApi
