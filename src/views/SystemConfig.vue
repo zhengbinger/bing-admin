@@ -21,7 +21,7 @@
         <el-table-column prop="value" label="配置值" min-width="200"></el-table-column>
         <el-table-column prop="description" label="描述" min-width="200"></el-table-column>
         <el-table-column prop="status" label="状态" width="80">
-          <template slot-scope="scope">
+          <template v-slot="scope">
             <el-switch
               v-model="scope.row.status"
               active-color="#13ce66"
@@ -33,21 +33,21 @@
           </template>
         </el-table-column>
         <el-table-column prop="isEncrypted" label="是否加密" width="100">
-          <template slot-scope="scope">
+          <template v-slot="scope">
             <el-tag :type="scope.row.isEncrypted ? 'success' : 'info'">
               {{ scope.row.isEncrypted ? '是' : '否' }}
             </el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="isGlobal" label="是否全局" width="100">
-          <template slot-scope="scope">
+          <template v-slot="scope">
             <el-tag :type="scope.row.isGlobal ? 'warning' : 'info'">
               {{ scope.row.isGlobal ? '是' : '否' }}
             </el-tag>
           </template>
         </el-table-column>
         <el-table-column label="操作" width="180" fixed="right">
-          <template slot-scope="scope">
+          <template v-slot="scope">
             <el-button type="primary" size="small" @click="handleEdit(scope.row)">
               <i class="el-icon-edit"></i>
               编辑
@@ -64,7 +64,7 @@
     <!-- 新增/编辑系统配置对话框 -->
     <el-dialog
       :title="dialogTitle"
-      :visible.sync="dialogVisible"
+      v-model:visible="dialogVisible"
       width="500px"
       :close-on-click-modal="false"
     >
@@ -112,10 +112,12 @@
           ></el-switch>
         </el-form-item>
       </el-form>
-      <span slot="footer" class="dialog-footer">
+      <template v-slot:footer>
+<span  class="dialog-footer">
         <el-button @click="dialogVisible = false">取消</el-button>
         <el-button type="primary" @click="handleSubmit">确定</el-button>
       </span>
+</template>
     </el-dialog>
   </div>
 </template>

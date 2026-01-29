@@ -58,7 +58,7 @@
         <el-table-column prop="ip" label="IP地址" min-width="150"></el-table-column>
         <el-table-column prop="loginTime" label="登录时间" min-width="180"></el-table-column>
         <el-table-column prop="loginStatus" label="登录状态" width="100">
-          <template slot-scope="scope">
+          <template v-slot="scope">
             <el-tag :type="scope.row.loginStatus ? 'success' : 'danger'">
               {{ scope.row.loginStatus ? '成功' : '失败' }}
             </el-tag>
@@ -66,21 +66,23 @@
         </el-table-column>
         <el-table-column prop="userAgent" label="浏览器信息" min-width="200"></el-table-column>
         <el-table-column prop="errorMessage" label="错误信息" min-width="200">
-          <template slot-scope="scope">
+          <template v-slot="scope">
             <el-popover
               placement="top"
               width="400"
               trigger="hover"
             >
               <p>{{ scope.row.errorMessage }}</p>
-              <span slot="reference">
+              <template v-slot:reference>
+<span >
                 {{ scope.row.errorMessage ? scope.row.errorMessage.substring(0, 20) + '...' : '-' }}
               </span>
+</template>
             </el-popover>
           </template>
         </el-table-column>
         <el-table-column label="操作" width="80" fixed="right">
-          <template slot-scope="scope">
+          <template v-slot="scope">
             <el-button type="primary" size="small" @click="handleView(scope.row)">
               <i class="el-icon-view"></i>
               查看
@@ -93,7 +95,7 @@
     <!-- 登录记录详情对话框 -->
     <el-dialog
       title="登录记录详情"
-      :visible.sync="detailVisible"
+      v-model:visible="detailVisible"
       width="600px"
       :close-on-click-modal="false"
     >
@@ -117,9 +119,11 @@
           ></el-input>
         </el-descriptions-item>
       </el-descriptions>
-      <span slot="footer" class="dialog-footer">
+      <template v-slot:footer>
+<span  class="dialog-footer">
         <el-button @click="detailVisible = false">关闭</el-button>
       </span>
+</template>
     </el-dialog>
   </div>
 </template>

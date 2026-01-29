@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import { useUserStore } from '../store/modules/user'
 
 /**
@@ -6,13 +6,34 @@ import { useUserStore } from '../store/modules/user'
  * 实现路由懒加载、权限控制、路由守卫等功能
  */
 
+// 路由元信息接口
+export interface RouteMeta {
+  title?: string
+  requiresAuth?: boolean
+  hidden?: boolean
+  icon?: string
+  affix?: boolean
+  alwaysShow?: boolean
+  permissions?: string[]
+  roles?: string[]
+  noCache?: boolean
+  breadcrumb?: boolean
+  activeMenu?: string
+}
+
+// 扩展路由记录类型
+export interface AppRouteRecordRaw extends Omit<RouteRecordRaw, 'meta' | 'children'> {
+  meta?: RouteMeta
+  children?: AppRouteRecordRaw[]
+}
+
 // 路由懒加载优化：使用动态导入
-const loadView = (viewPath) => {
+const loadView = (viewPath: string) => {
   return () => import(/* webpackChunkName: "[request]" */ `../views/${viewPath}.vue`)
 }
 
 // 常量路由：不需要权限的路由
-const constantRoutes = [
+const constantRoutes: AppRouteRecordRaw[] = [
   {
     path: '/login',
     name: 'login',
@@ -65,7 +86,7 @@ const constantRoutes = [
 ]
 
 // 动态路由：需要权限的路由
-const asyncRoutes = [
+const asyncRoutes: AppRouteRecordRaw[] = [
   {
     path: '/system',
     name: 'system',
@@ -79,12 +100,45 @@ const asyncRoutes = [
     children: [
       {
         path: 'user',
-        name: 'user',
-        component: loadView('User'),
+        name: 'userManagement',
+        component: () => import('../views/user/UserList.vue'),
         meta: {
           title: '用户管理',
           icon: 'User',
           permissions: ['user:list']
+        }
+      },
+      {
+        path: 'user/create',
+        name: 'userCreate',
+        component: () => import('../views/user/UserForm.vue'),
+        meta: {
+          title: '创建用户',
+          hidden: true,
+          permissions: ['user:create'],
+          activeMenu: '/system/user'
+        }
+      },
+      {
+        path: 'user/edit/:id',
+        name: 'userEdit',
+        component: () => import('../views/user/UserForm.vue'),
+        meta: {
+          title: '编辑用户',
+          hidden: true,
+          permissions: ['user:update'],
+          activeMenu: '/system/user'
+        }
+      },
+      {
+        path: 'user/detail/:id',
+        name: 'userDetail',
+        component: () => import('../views/user/UserDetail.vue'),
+        meta: {
+          title: '用户详情',
+          hidden: true,
+          permissions: ['user:view'],
+          activeMenu: '/system/user'
         }
       },
       {
@@ -230,7 +284,7 @@ const asyncRoutes = [
 // 创建路由实例
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
-  routes: constantRoutes,
+  routes: constantRoutes as RouteRecordRaw[],
   scrollBehavior(to, from, savedPosition) {
     // 路由切换时滚动到顶部
     return { top: 0 }
@@ -238,8 +292,8 @@ const router = createRouter({
 })
 
 // 动态添加路由
-const addDynamicRoutes = (router, routes, userPermissions) => {
-  const addRoutes = (routes) => {
+const addDynamicRoutes = (router: any, routes: AppRouteRecordRaw[], userPermissions: string[]) => {
+  const addRoutes = (routes: AppRouteRecordRaw[]): AppRouteRecordRaw[] => {
     return routes.map(route => {
       // 检查路由是否需要权限
       if (route.meta?.permissions && route.meta.permissions.length > 0) {
@@ -264,7 +318,7 @@ const addDynamicRoutes = (router, routes, userPermissions) => {
         }
         return route
       }
-    }).filter(Boolean)
+    }).filter(Boolean) as AppRouteRecordRaw[]
   }
   
   // 过滤出用户有权限的路由
@@ -272,7 +326,7 @@ const addDynamicRoutes = (router, routes, userPermissions) => {
   
   // 添加到路由
   accessibleRoutes.forEach(route => {
-    router.addRoute(route)
+    router.addRoute(route as RouteRecordRaw)
   })
 }
 
@@ -281,13 +335,13 @@ router.beforeEach(async (to, from, next) => {
   const userStore = useUserStore()
   
   // 设置页面标题
-  document.title = to.meta.title ? `${to.meta.title} - Bing Admin` : 'Bing Admin'
+  document.title = to.meta?.title ? `${to.meta.title} - Bing Admin` : 'Bing Admin'
   
   // 获取token
   const token = userStore.token
   
   // 不需要登录的页面
-  if (!to.meta.requiresAuth) {
+  if (!to.meta?.requiresAuth) {
     if (token && to.path === '/login') {
       // 已登录用户访问登录页，重定向到首页
       next({ path: '/' })
@@ -321,7 +375,7 @@ router.beforeEach(async (to, from, next) => {
     
     if (!hasDynamicRoutes) {
       // 加载动态路由
-      const userPermissions = userStore.userInfo.permissions || []
+      const userPermissions = (userStore.userInfo as any).permissions || []
       addDynamicRoutes(router, asyncRoutes, userPermissions)
       
       // 重新导航到目标路由
@@ -330,9 +384,9 @@ router.beforeEach(async (to, from, next) => {
     }
     
     // 检查权限
-    if (to.meta.permissions && to.meta.permissions.length > 0) {
-      const hasPermission = userStore.userInfo.permissions?.some(permission => 
-        to.meta.permissions.includes(permission)
+    if (to.meta?.permissions && to.meta.permissions.length > 0) {
+      const hasPermission = (userStore.userInfo as any).permissions?.some((permission: string) => 
+        to.meta!.permissions!.includes(permission)
       )
       if (hasPermission) {
         next()

@@ -21,7 +21,7 @@
         <el-table-column prop="code" label="字典编码" min-width="120"></el-table-column>
         <el-table-column prop="description" label="描述" min-width="200"></el-table-column>
         <el-table-column prop="status" label="状态" width="80">
-          <template slot-scope="scope">
+          <template v-slot="scope">
             <el-switch
               v-model="scope.row.status"
               active-color="#13ce66"
@@ -33,7 +33,7 @@
           </template>
         </el-table-column>
         <el-table-column label="操作" width="250" fixed="right">
-          <template slot-scope="scope">
+          <template v-slot="scope">
             <el-button type="primary" size="small" @click="handleEditDict(scope.row)">
               <i class="el-icon-edit"></i>
               编辑
@@ -54,7 +54,7 @@
     <!-- 数据字典项管理对话框 -->
     <el-dialog
       :title="dictItemDialogTitle"
-      :visible.sync="dictItemDialogVisible"
+      v-model:visible="dictItemDialogVisible"
       width="700px"
       :close-on-click-modal="false"
     >
@@ -76,7 +76,7 @@
         <el-table-column prop="value" label="值" min-width="120"></el-table-column>
         <el-table-column prop="sort" label="排序" width="80"></el-table-column>
         <el-table-column prop="status" label="状态" width="80">
-          <template slot-scope="scope">
+          <template v-slot="scope">
             <el-switch
               v-model="scope.row.status"
               active-color="#13ce66"
@@ -88,7 +88,7 @@
           </template>
         </el-table-column>
         <el-table-column label="操作" width="150">
-          <template slot-scope="scope">
+          <template v-slot="scope">
             <el-button type="primary" size="small" @click="handleEditDictItem(scope.row)">
               <i class="el-icon-edit"></i>
               编辑
@@ -105,7 +105,7 @@
     <!-- 新增/编辑数据字典对话框 -->
     <el-dialog
       :title="dictDialogTitle"
-      :visible.sync="dictDialogVisible"
+      v-model:visible="dictDialogVisible"
       width="500px"
       :close-on-click-modal="false"
     >
@@ -134,16 +134,18 @@
           ></el-switch>
         </el-form-item>
       </el-form>
-      <span slot="footer" class="dialog-footer">
+      <template v-slot:footer>
+<span  class="dialog-footer">
         <el-button @click="dictDialogVisible = false">取消</el-button>
         <el-button type="primary" @click="handleSubmitDict">确定</el-button>
       </span>
+</template>
     </el-dialog>
 
     <!-- 新增/编辑字典项对话框 -->
     <el-dialog
       :title="dictItemFormTitle"
-      :visible.sync="dictItemFormVisible"
+      v-model:visible="dictItemFormVisible"
       width="500px"
       :close-on-click-modal="false"
     >
@@ -167,10 +169,12 @@
           ></el-switch>
         </el-form-item>
       </el-form>
-      <span slot="footer" class="dialog-footer">
+      <template v-slot:footer>
+<span  class="dialog-footer">
         <el-button @click="dictItemFormVisible = false">取消</el-button>
         <el-button type="primary" @click="handleSubmitDictItem">确定</el-button>
       </span>
+</template>
     </el-dialog>
   </div>
 </template>

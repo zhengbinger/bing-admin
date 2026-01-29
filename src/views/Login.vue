@@ -1,642 +1,684 @@
 <template>
   <div class="login-container">
     <div class="login-wrapper">
-      <!-- 左侧品牌区域 -->
-      <div class="login-brand">
-        <div class="brand-content">
-          <h1>Bing Admin</h1>
-          <p>企业级后台管理系统解决方案</p>
-        </div>
-      </div>
-      
-      <!-- 右侧登录表单区域 -->
       <div class="login-form-container">
-        <div class="login-form-wrapper">
-          <div class="form-header">
-            <h2>欢迎回来</h2>
-            <p>请登录您的账号</p>
+        <!-- 登录表单头部 -->
+        <div class="login-header">
+          <div class="logo">
+            <img src="/logo.svg" alt="Bing Admin" class="logo-image" />
+            <h1 class="logo-text">Bing Admin</h1>
           </div>
-          
-          <el-form
-            ref="loginFormRef"
-            :model="loginForm"
-            :rules="loginRules"
-            class="login-form"
-          >
-            <el-form-item prop="username" class="login-input-item">
-              <el-input
-                v-model="loginForm.username"
-                placeholder="请输入用户名"
-                prefix-icon="el-icon-user"
-                class="login-input"
-                size="large"
+          <p class="login-subtitle">管理后台系统</p>
+        </div>
+
+        <!-- 登录表单 -->
+        <el-form
+          ref="loginFormRef"
+          :model="loginForm"
+          :rules="loginRules"
+          class="login-form"
+          size="large"
+          @keyup.enter="handleLogin"
+        >
+          <!-- 渠道选择 -->
+          <el-form-item prop="channel">
+            <el-select
+              v-model="loginForm.channel"
+              placeholder="请选择登录渠道"
+              class="channel-select"
+              @change="handleChannelChange"
+            >
+              <el-option
+                v-for="channel in channels"
+                :key="channel.value"
+                :label="channel.label"
+                :value="channel.value"
+                :disabled="channel.disabled"
               />
-            </el-form-item>
-            <el-form-item prop="channel" class="login-input-item">
-              <el-select
-                v-model="loginForm.channel"
-                placeholder="请选择登录渠道"
-                :disabled="loading"
-                class="login-input"
-                size="large"
-                style="width: 100%"
-              >
-                <el-option label="网页端" :value="'WEB'" />
-                <el-option label="移动端" :value="'MOBILE'" />
-                <el-option label="API接口" :value="'API'" />
-                <el-option label="第三方登录" :value="'THIRD_PARTY'" />
-              </el-select>
-            </el-form-item>
-            
-            <el-form-item prop="password" class="login-input-item">
+            </el-select>
+          </el-form-item>
+
+          <!-- 用户名 -->
+          <el-form-item prop="username">
+            <el-input
+              v-model="loginForm.username"
+              placeholder="请输入用户名"
+              :prefix-icon="User"
+              clearable
+              autocomplete="username"
+            />
+          </el-form-item>
+
+          <!-- 密码 -->
+          <el-form-item prop="password">
+            <el-input
+              v-model="loginForm.password"
+              type="password"
+              placeholder="请输入密码"
+              :prefix-icon="Lock"
+              show-password
+              clearable
+              autocomplete="current-password"
+            />
+          </el-form-item>
+
+          <!-- 验证码 -->
+          <el-form-item v-if="showCaptcha" prop="captcha">
+            <div class="captcha-container">
               <el-input
-                v-model="loginForm.password"
-                type="password"
-                placeholder="请输入密码"
-                prefix-icon="el-icon-lock"
-                show-password
-                class="login-input"
-                size="large"
+                v-model="loginForm.captcha"
+                placeholder="请输入验证码"
+                :prefix-icon="Key"
+                clearable
+                class="captcha-input"
               />
-            </el-form-item>
-            
-            <!-- 验证码输入区域，根据配置决定是否显示 -->
-            <el-form-item v-if="isCaptchaEnabled" prop="captcha" class="login-input-item">
-              <div class="captcha-container">
-                <el-input
-                  v-model="loginForm.captcha"
-                  placeholder="请输入验证码"
-                  prefix-icon="el-icon-key"
-                  class="login-input captcha-input"
-                  size="large"
+              <div class="captcha-image-container" @click="refreshCaptcha">
+                <img
+                  v-if="captchaImage"
+                  :src="captchaImage"
+                  alt="验证码"
+                  class="captcha-image"
                 />
-                <div class="captcha-image-wrapper">
-                  <img
-                    v-if="captchaImage"
-                    :src="captchaImage"
-                    alt="验证码"
-                    class="captcha-image"
-                    @click="refreshCaptcha"
-                    :title="'点击刷新验证码'"
-                  />
-                  <el-skeleton v-else animated />
-                  <div
-                    v-if="captchaLoading"
-                    class="captcha-loading"
-                  />
+                <div v-else class="captcha-placeholder">
+                  <el-icon><Refresh /></el-icon>
+                  <span>点击获取</span>
                 </div>
               </div>
-            </el-form-item>
-            
-            <el-form-item>
-              <el-button
-                type="primary"
-                :loading="loading"
-                @click="handleLogin"
-                class="login-button"
-                :disabled="loading"
-                size="large"
-              >
-                登录系统
-              </el-button>
-            </el-form-item>
-          </el-form>
+            </div>
+          </el-form-item>
+
+          <!-- 记住我 -->
+          <el-form-item>
+            <div class="login-options">
+              <el-checkbox v-model="rememberMe">记住我</el-checkbox>
+              <el-link type="primary" :underline="false" @click="handleForgotPassword">
+                忘记密码？
+              </el-link>
+            </div>
+          </el-form-item>
+
+          <!-- 登录按钮 -->
+          <el-form-item>
+            <el-button
+              type="primary"
+              size="large"
+              class="login-button"
+              :loading="loading"
+              @click="handleLogin"
+            >
+              {{ loading ? '登录中...' : '登录' }}
+            </el-button>
+          </el-form-item>
+        </el-form>
+
+        <!-- 其他登录方式 -->
+        <div v-if="showThirdPartyLogin" class="third-party-login">
+          <el-divider>其他登录方式</el-divider>
+          <div class="third-party-buttons">
+            <el-button
+              v-if="enableWechatLogin"
+              circle
+              size="large"
+              class="wechat-login-btn"
+              @click="handleWechatLogin"
+            >
+              <el-icon><ChatDotRound /></el-icon>
+            </el-button>
+          </div>
         </div>
       </div>
+
+      <!-- 登录页面背景装饰 -->
+      <div class="login-decoration">
+        <div class="decoration-circle circle-1"></div>
+        <div class="decoration-circle circle-2"></div>
+        <div class="decoration-circle circle-3"></div>
+      </div>
+    </div>
+
+    <!-- 页脚信息 -->
+    <div class="login-footer">
+      <p>&copy; 2024 Bing Admin. All rights reserved.</p>
     </div>
   </div>
 </template>
 
-<script setup>
-import { ref, reactive, computed, onMounted, watch } from 'vue'
+<script setup lang="ts">
+import { ref, reactive, computed, onMounted, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { ElMessage } from 'element-plus'
-import { useUserStore } from '../store/modules/user'
-import api from '../api'
+import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
+import { User, Lock, Key, Refresh, ChatDotRound } from '@element-plus/icons-vue'
+import { useAuthStore } from '../store/modules/auth'
+import type { LoginRequest } from '../types/auth'
 
+// 路由和状态管理
 const router = useRouter()
 const route = useRoute()
-const userStore = useUserStore()
+const authStore = useAuthStore()
 
-const loginFormRef = ref(null)
+// 表单引用
+const loginFormRef = ref<FormInstance>()
+
+// 响应式数据
 const loading = ref(false)
+const showCaptcha = ref(false)
+const captchaImage = ref('')
+const captchaKey = ref('')
+const rememberMe = ref(false)
 
-const loginForm = reactive({
+// 登录表单数据
+const loginForm = reactive<LoginRequest>({
   username: '',
   password: '',
-  channel: 'WEB',
+  channel: 'web',
   captcha: '',
   captchaKey: '',
-  captchaType: ''
+  captchaType: 'image',
+  deviceId: generateDeviceId(),
+  deviceInfo: getDeviceInfo(),
+  clientVersion: '1.0.0'
 })
 
-// 验证码相关状态
-const captchaImage = ref('')
-const captchaLoading = ref(false)
-const captchaConfig = ref(null)
-const isCaptchaEnabled = ref(false)
+// 渠道选项
+const channels = ref([
+  { label: 'Web端', value: 'web', disabled: false },
+  { label: '移动端', value: 'mobile', disabled: false },
+  { label: '管理端', value: 'admin', disabled: false }
+])
 
-// 动态登录表单规则
-const loginRules = computed(() => {
-  const rules = {
-    username: [
-      { required: true, message: '请输入用户名', trigger: 'blur' },
-      { min: 2, max: 20, message: '用户名长度在 2 到 20 个字符', trigger: 'blur' }
-    ],
-    password: [
-      { required: true, message: '请输入密码', trigger: 'blur' },
-      { min: 6, message: '密码长度至少 6 个字符', trigger: 'blur' }
-    ],
-    channel: [
-      { required: true, message: '请选择登录渠道', trigger: 'change' }
-    ]
-  }
-  
-  // 根据验证码配置动态添加验证码验证规则
-  if (isCaptchaEnabled.value) {
-    rules.captcha = [
-      { required: true, message: '请输入验证码', trigger: 'blur' },
-      { min: 4, max: 6, message: '验证码长度在 4 到 6 个字符', trigger: 'blur' }
-    ]
-  }
-  
-  return rules
-})
+// 计算属性
+const showThirdPartyLogin = computed(() => enableWechatLogin.value)
+const enableWechatLogin = ref(true) // 可以从配置中获取
 
-// 获取重定向地址
-const redirectPath = computed(() => {
-  return route.query.redirect || '/'
-})
-
-// 获取验证码配置
-const getCaptchaConfig = async () => {
-  try {
-    const response = await api.captcha.getCaptchaConfig(loginForm.channel)
-    if (response.code === 200) {
-      captchaConfig.value = response.data
-      isCaptchaEnabled.value = response.data.enabled || false
-      
-      // 如果启用了验证码，则获取验证码
-      if (isCaptchaEnabled.value) {
-        await getCaptcha()
-      } else {
-        // 如果未启用验证码，则清空验证码相关信息
-        captchaImage.value = ''
-        loginForm.captcha = ''
-        loginForm.captchaKey = ''
+// 表单验证规则
+const loginRules: FormRules = {
+  channel: [
+    { required: true, message: '请选择登录渠道', trigger: 'change' }
+  ],
+  username: [
+    { required: true, message: '请输入用户名', trigger: 'blur' },
+    { min: 3, max: 50, message: '用户名长度在 3 到 50 个字符', trigger: 'blur' }
+  ],
+  password: [
+    { required: true, message: '请输入密码', trigger: 'blur' },
+    { min: 6, max: 128, message: '密码长度在 6 到 128 个字符', trigger: 'blur' }
+  ],
+  captcha: [
+    { 
+      required: true, 
+      message: '请输入验证码', 
+      trigger: 'blur',
+      validator: (rule, value, callback) => {
+        if (showCaptcha.value && !value) {
+          callback(new Error('请输入验证码'))
+        } else {
+          callback()
+        }
       }
     }
-  } catch (error) {
-    console.error('获取验证码配置失败:', error)
-    // 如果获取配置失败，默认不启用验证码
-    isCaptchaEnabled.value = false
-  }
+  ]
+}
+
+// 生成设备ID
+function generateDeviceId(): string {
+  const stored = localStorage.getItem('device_id')
+  if (stored) return stored
+  
+  const deviceId = 'web_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36)
+  localStorage.setItem('device_id', deviceId)
+  return deviceId
+}
+
+// 获取设备信息
+function getDeviceInfo(): string {
+  const userAgent = navigator.userAgent
+  const platform = navigator.platform
+  const language = navigator.language
+  
+  return JSON.stringify({
+    userAgent,
+    platform,
+    language,
+    screen: {
+      width: screen.width,
+      height: screen.height
+    },
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+  })
 }
 
 // 获取验证码
-const getCaptcha = async () => {
-  if (!isCaptchaEnabled.value || !captchaConfig.value) return
-  
+const getCaptcha = async (): Promise<void> => {
   try {
-    captchaLoading.value = true
-    // 从配置中获取验证码类型，如果没有配置则使用默认值'image'
-    const captchaType = captchaConfig.value.captchaType || 'IMAGE'
-    const response = await api.captcha.generateCaptcha(loginForm.channel, captchaType)
+    // 这里应该调用获取验证码的API
+    // const response = await captchaApi.getCaptcha()
+    // captchaImage.value = response.data.image
+    // captchaKey.value = response.data.key
     
-    if (response.code === 200) {
-      if (captchaType === 'IMAGE') {
-        captchaImage.value = response.data.captchaContent
-      } else {
-        // 非图片验证码类型，显示提示信息
-        captchaImage.value = ''
-        ElMessage.success('验证码已发送')
-      }
-      loginForm.captchaKey = response.data.captchaKey
-      loginForm.captchaType = captchaType
-    } else {
-      ElMessage.error('获取验证码失败')
-    }
+    // 模拟验证码获取
+    captchaKey.value = 'captcha_' + Date.now()
+    captchaImage.value = `data:image/svg+xml;base64,${btoa(`
+      <svg width="120" height="40" xmlns="http://www.w3.org/2000/svg">
+        <rect width="120" height="40" fill="#f0f0f0"/>
+        <text x="60" y="25" text-anchor="middle" font-family="Arial" font-size="16" fill="#333">
+          ${Math.random().toString(36).substr(2, 4).toUpperCase()}
+        </text>
+      </svg>
+    `)}`
+    
+    loginForm.captchaKey = captchaKey.value
   } catch (error) {
     console.error('获取验证码失败:', error)
-    ElMessage.error('获取验证码失败，请重试')
-  } finally {
-    captchaLoading.value = false
+    ElMessage.error('获取验证码失败')
   }
 }
 
 // 刷新验证码
-const refreshCaptcha = () => {
-  getCaptcha()
+const refreshCaptcha = async (): Promise<void> => {
+  await getCaptcha()
 }
 
-// 监听渠道变化，重新获取验证码配置
-watch(
-  () => loginForm.channel,
-  (newChannel) => {
-    getCaptchaConfig()
-  },
-  { immediate: true }
-)
-
-const handleLogin = async () => {
-  try {
-    await loginFormRef.value.validate()
-    loading.value = true
-    
-    // 使用封装的API进行登录
-    const response = await userStore.login(loginForm)
-    
-    loading.value = false
-    ElMessage.success('登录成功')
-    
-    // 登录成功后跳转到目标页面
-    router.push(redirectPath.value)
-    
-  } catch (error) {
-    loading.value = false
-    
-    // 登录失败后自动刷新验证码
-    refreshCaptcha()
-    
-    const errorMsg = error.response?.data?.message || error.message || '登录失败，请重试'
-    ElMessage.error(errorMsg)
-    
-    console.error('登录失败:', error)
+// 处理渠道变化
+const handleChannelChange = (channel: string): void => {
+  console.log('渠道变化:', channel)
+  
+  // 根据渠道显示不同的验证码策略
+  if (channel === 'web') {
+    showCaptcha.value = true
+    nextTick(() => {
+      getCaptcha()
+    })
+  } else {
+    showCaptcha.value = false
+    captchaImage.value = ''
+    captchaKey.value = ''
+    loginForm.captcha = ''
   }
 }
 
-// 组件挂载时获取验证码配置
+// 处理登录
+const handleLogin = async (): Promise<void> => {
+  if (!loginFormRef.value) return
+
+  try {
+    // 表单验证
+    const valid = await loginFormRef.value.validate()
+    if (!valid) return
+
+    loading.value = true
+
+    // 执行登录
+    await authStore.login(loginForm)
+
+    // 记住我功能
+    if (rememberMe.value) {
+      localStorage.setItem('remember_username', loginForm.username)
+      localStorage.setItem('remember_channel', loginForm.channel)
+    } else {
+      localStorage.removeItem('remember_username')
+      localStorage.removeItem('remember_channel')
+    }
+
+    // 登录成功，跳转到目标页面
+    const redirect = (route.query.redirect as string) || '/dashboard'
+    await router.push(redirect)
+
+  } catch (error: any) {
+    console.error('登录失败:', error)
+    
+    // 登录失败后刷新验证码
+    if (showCaptcha.value) {
+      await refreshCaptcha()
+      loginForm.captcha = ''
+    }
+    
+    // 显示错误信息
+    const message = error.message || '登录失败，请检查用户名和密码'
+    ElMessage.error(message)
+  } finally {
+    loading.value = false
+  }
+}
+
+// 处理忘记密码
+const handleForgotPassword = (): void => {
+  ElMessageBox.alert('请联系系统管理员重置密码', '忘记密码', {
+    confirmButtonText: '确定',
+    type: 'info'
+  })
+}
+
+// 处理微信登录
+const handleWechatLogin = (): void => {
+  ElMessage.info('微信登录功能开发中...')
+}
+
+// 初始化记住我功能
+const initRememberMe = (): void => {
+  const rememberedUsername = localStorage.getItem('remember_username')
+  const rememberedChannel = localStorage.getItem('remember_channel')
+  
+  if (rememberedUsername) {
+    loginForm.username = rememberedUsername
+    rememberMe.value = true
+  }
+  
+  if (rememberedChannel) {
+    loginForm.channel = rememberedChannel
+  }
+}
+
+// 组件挂载时的初始化
 onMounted(() => {
-  getCaptchaConfig()
+  // 如果已经登录，直接跳转
+  if (authStore.isAuthenticated) {
+    const redirect = (route.query.redirect as string) || '/dashboard'
+    router.push(redirect)
+    return
+  }
+
+  // 初始化记住我功能
+  initRememberMe()
+  
+  // 初始化验证码
+  if (loginForm.channel === 'web') {
+    showCaptcha.value = true
+    getCaptcha()
+  }
 })
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .login-container {
+  min-height: 100vh;
   display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  background-color: #f5f7fa;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-}
-
-.login-wrapper {
-  display: flex;
-  width: 900px;
-  height: 500px;
-  background-color: #fff;
-  border-radius: 12px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-}
-
-/* 左侧品牌区域 */
-.login-brand {
-  width: 50%;
-  background: linear-gradient(135deg, #6266ed 0%, #7c4dff 50%, #ff4081 100%);
-  color: #fff;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 40px;
+  flex-direction: column;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   position: relative;
   overflow: hidden;
 }
 
-.login-brand::before {
-  content: '';
+.login-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  position: relative;
+  z-index: 2;
+}
+
+.login-form-container {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 40px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 400px;
+  position: relative;
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 32px;
+  
+  .logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+    
+    .logo-image {
+      width: 48px;
+      height: 48px;
+      margin-right: 12px;
+    }
+    
+    .logo-text {
+      font-size: 28px;
+      font-weight: 600;
+      color: #2c3e50;
+      margin: 0;
+    }
+  }
+  
+  .login-subtitle {
+    color: #7f8c8d;
+    font-size: 16px;
+    margin: 0;
+  }
+}
+
+.login-form {
+  .channel-select {
+    width: 100%;
+  }
+  
+  .captcha-container {
+    display: flex;
+    gap: 12px;
+    
+    .captcha-input {
+      flex: 1;
+    }
+    
+    .captcha-image-container {
+      width: 120px;
+      height: 40px;
+      border: 1px solid #dcdfe6;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f5f7fa;
+      transition: all 0.3s;
+      
+      &:hover {
+        border-color: #409eff;
+        background: #ecf5ff;
+      }
+      
+      .captcha-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 3px;
+      }
+      
+      .captcha-placeholder {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        color: #909399;
+        font-size: 12px;
+        
+        .el-icon {
+          font-size: 16px;
+          margin-bottom: 2px;
+        }
+      }
+    }
+  }
+  
+  .login-options {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+  }
+  
+  .login-button {
+    width: 100%;
+    height: 48px;
+    font-size: 16px;
+    font-weight: 500;
+    border-radius: 8px;
+  }
+}
+
+.third-party-login {
+  margin-top: 24px;
+  
+  .el-divider {
+    margin: 20px 0;
+    
+    :deep(.el-divider__text) {
+      color: #909399;
+      font-size: 14px;
+    }
+  }
+  
+  .third-party-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    
+    .wechat-login-btn {
+      width: 48px;
+      height: 48px;
+      background: #07c160;
+      border-color: #07c160;
+      color: white;
+      
+      &:hover {
+        background: #06ad56;
+        border-color: #06ad56;
+      }
+    }
+  }
+}
+
+.login-decoration {
   position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 60%);
-  animation: float 6s ease-in-out infinite;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 1;
+  
+  .decoration-circle {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    animation: float 6s ease-in-out infinite;
+    
+    &.circle-1 {
+      width: 200px;
+      height: 200px;
+      top: 10%;
+      left: 10%;
+      animation-delay: 0s;
+    }
+    
+    &.circle-2 {
+      width: 150px;
+      height: 150px;
+      top: 60%;
+      right: 15%;
+      animation-delay: 2s;
+    }
+    
+    &.circle-3 {
+      width: 100px;
+      height: 100px;
+      bottom: 20%;
+      left: 20%;
+      animation-delay: 4s;
+    }
+  }
+}
+
+.login-footer {
+  text-align: center;
+  padding: 20px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
+  z-index: 2;
+  position: relative;
 }
 
 @keyframes float {
   0%, 100% {
-    transform: translate(0, 0) rotate(0deg);
-  }
-  25% {
-    transform: translate(5%, 5%) rotate(5deg);
+    transform: translateY(0px) rotate(0deg);
   }
   50% {
-    transform: translate(0, 10%) rotate(0deg);
-  }
-  75% {
-    transform: translate(-5%, 5%) rotate(-5deg);
+    transform: translateY(-20px) rotate(180deg);
   }
 }
 
-.brand-content {
-  text-align: center;
-}
-
-.brand-content h1 {
-  font-size: 36px;
-  font-weight: 700;
-  margin: 0 0 20px 0;
-  line-height: 1.2;
-}
-
-.brand-content p {
-  font-size: 18px;
-  opacity: 0.9;
-  margin: 0;
-  line-height: 1.6;
-}
-
-/* 右侧登录表单区域 */
-.login-form-container {
-  width: 50%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 40px;
-}
-
-.login-form-wrapper {
-  width: 100%;
-  max-width: 320px;
-}
-
-.form-header {
-  text-align: center;
-  margin-bottom: 40px;
-}
-
-.form-header h2 {
-  font-size: 28px;
-  font-weight: 600;
-  color: #6266ed;
-  margin: 0 0 10px 0;
-}
-
-.form-header p {
-  font-size: 16px;
-  color: #6b7280;
-  margin: 0;
-}
-
-.login-form {
-  width: 100%;
-}
-
-/* 登录表单项目样式 */
-.login-input-item {
-  margin-bottom: 24px;
-  width: 100%;
-}
-
-/* 登录输入框样式 */
-:deep(.login-input) {
-  width: 100%;
-}
-
-:deep(.login-input .el-input__wrapper) {
-  border-radius: 12px;
-  height: 52px;
-  padding: 0 18px;
-  background-color: #ffffff;
-  border: 2px solid #e5e7eb;
-  transition: all 0.3s ease;
-}
-
-:deep(.login-input .el-input__wrapper:hover) {
-  border-color: #6266ed;
-  box-shadow: 0 4px 12px rgba(98, 102, 237, 0.2);
-  background-color: #fafbff;
-}
-
-:deep(.login-input .el-input__wrapper.is-focus) {
-  border-color: #6266ed;
-  box-shadow: 0 0 0 3px rgba(98, 102, 237, 0.3);
-  background-color: #ffffff;
-}
-
-:deep(.login-input .el-input__inner) {
-  height: 52px;
-  font-size: 16px;
-  color: #1f2937;
-  line-height: 52px;
-}
-
-/* 优化图标样式 */
-:deep(.login-input .el-input__prefix-inner) {
-  margin-right: 12px;
-}
-
-:deep(.login-input .el-input__prefix-inner .el-icon) {
-  color: #6266ed;
-  font-size: 18px;
-  transition: color 0.3s ease;
-}
-
-:deep(.login-input .el-input__suffix-inner) {
-  margin-left: 12px;
-}
-
-:deep(.login-input .el-input__suffix-inner .el-icon) {
-  color: #6266ed;
-  font-size: 16px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-:deep(.login-input .el-input__suffix-inner .el-icon:hover) {
-  transform: scale(1.1);
-}
-
-/* 响应式设计 - 验证码调整 */
+// 响应式设计
 @media (max-width: 768px) {
+  .login-form-container {
+    padding: 24px;
+    margin: 16px;
+    max-width: none;
+  }
+  
+  .login-header {
+    .logo {
+      .logo-text {
+        font-size: 24px;
+      }
+    }
+    
+    .login-subtitle {
+      font-size: 14px;
+    }
+  }
+  
   .captcha-container {
     flex-direction: column;
-    gap: 12px;
-  }
-  
-  .captcha-input {
-    width: 100%;
-  }
-  
-  .captcha-image-wrapper {
-    width: 100%;
-    height: 48px;
-  }
-}
-
-/* 验证码容器 */
-.captcha-container {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  width: 100%;
-}
-
-.captcha-input {
-  flex: 1;
-}
-
-.captcha-image-wrapper {
-  position: relative;
-  width: 120px;
-  height: 52px;
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-.captcha-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  cursor: pointer;
-  transition: transform 0.2s ease;
-}
-
-.captcha-image:hover {
-  transform: scale(1.02);
-}
-
-.captcha-loading {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(255, 255, 255, 0.7);
-  background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAiIGhlaWdodD0iMzAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMTUiIGN5PSIxNSIgcj0iMTIiIGZpbGw9IiM2MjY2ZWQiLz48cGF0aCBkPSJNMCAxNWgxMXYxNUgwVjE1em0zMCAxNWgxMXYxNUgzMFYxNXoiIGZpbGw9IiM2MjY2ZWQiLz48cGF0aCBkPSJNMCAxNWgxMXYxNUgwVjE1em0zMCAxNWgxMXYxNUgzMFYxNXoiIGZpbGw9IiM2MjY2ZWQiIG9wYWNpdHk9IjAuMyIvPjxwYXRoIGQ9Ik0wIDE1aDEwdjE1SDBWMTV6bTMwIDE1aDEwdjE1SDMwVjE1eiIgZmlsbD0iIzYyNjZlZCIgb3BhY2l0eT0iMC42Ii8+PC9zdmc+');
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: 24px 24px;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-/* 登录按钮 */
-.login-button {
-  width: 100%;
-  height: 50px;
-  font-size: 18px;
-  font-weight: 500;
-  border-radius: 8px;
-  background: linear-gradient(135deg, #6266ed 0%, #7c4dff 100%);
-  border: none;
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-  z-index: 1;
-}
-
-.login-button::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-  transition: all 0.6s;
-  z-index: -1;
-}
-
-.login-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(98, 102, 237, 0.4);
-}
-
-.login-button:hover::before {
-  left: 100%;
-}
-
-.login-button:active {
-  transform: translateY(0);
-}
-
-/* 响应式设计 */
-@media (max-width: 768px) {
-  .login-wrapper {
-    flex-direction: column;
-    width: 90%;
-    height: auto;
-    min-height: 500px;
-  }
-  
-  .login-brand {
-    width: 100%;
-    height: 220px;
-    padding: 20px;
-  }
-  
-  .brand-content h1 {
-    font-size: 28px;
-  }
-  
-  .brand-content p {
-    font-size: 16px;
-  }
-  
-  .login-form-container {
-    width: 100%;
-    padding: 30px 20px;
-  }
-  
-  .login-form-wrapper {
-    max-width: 100%;
-  }
-  
-  .form-header {
-    margin-bottom: 30px;
-  }
-  
-  .form-header h2 {
-    font-size: 24px;
-  }
-  
-  :deep(.login-input .el-input__wrapper) {
-    height: 48px;
-    padding: 0 16px;
-  }
-  
-  :deep(.login-input .el-input__inner) {
-    height: 48px;
-    font-size: 15px;
-    line-height: 48px;
-  }
-  
-  :deep(.login-input .el-input__prefix-inner) {
-    margin-right: 10px;
-  }
-  
-  :deep(.login-input .el-input__prefix-inner .el-icon) {
-    font-size: 16px;
-  }
-  
-  :deep(.login-input .el-input__suffix-inner) {
-    margin-left: 10px;
-  }
-  
-  :deep(.login-input .el-input__suffix-inner .el-icon) {
-    font-size: 15px;
-  }
-  
-  .login-button {
-    height: 46px;
-    font-size: 16px;
+    
+    .captcha-image-container {
+      width: 100%;
+      height: 50px;
+    }
   }
 }
 
 @media (max-width: 480px) {
-  .login-container {
+  .login-wrapper {
+    padding: 16px;
+  }
+  
+  .login-form-container {
     padding: 20px;
   }
   
-  .login-wrapper {
-    width: 100%;
+  .login-header {
+    margin-bottom: 24px;
+    
+    .logo {
+      .logo-image {
+        width: 40px;
+        height: 40px;
+      }
+      
+      .logo-text {
+        font-size: 20px;
+      }
+    }
+  }
+}
+
+// 深色主题支持
+@media (prefers-color-scheme: dark) {
+  .login-form-container {
+    background: rgba(30, 30, 30, 0.95);
+    color: #e0e0e0;
+    
+    .login-header {
+      .logo-text {
+        color: #e0e0e0;
+      }
+      
+      .login-subtitle {
+        color: #b0b0b0;
+      }
+    }
   }
 }
 </style>

@@ -93,7 +93,7 @@
       <!-- 添加/编辑配置对话框 -->
       <el-dialog
         :title="dialogTitle"
-        :visible.sync="dialogVisible"
+        v-model:visible="dialogVisible"
         width="600px"
         append-to-body
       >
